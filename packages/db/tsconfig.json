@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "outDir": "dist",
+      "module": "Node16",
+      "moduleResolution": "node16",
+      "target": "ES2022",
+      "declaration": true,
+      "emitDeclarationOnly": false,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "strict": true
+    },
+    "include": ["src"]
+  }

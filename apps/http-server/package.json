@@ -16,5 +16,12 @@
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "@repo/db":"workspace:*"
-  }
+  },
+  "compilerOptions": {
+       "baseUrl": ".",
+       "paths": {
+         "@repo/db": ["../../packages/db/src/index.ts"]
+       }
+     }
+
 }
