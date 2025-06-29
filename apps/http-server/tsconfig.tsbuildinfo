@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/routes/authroutes.ts"],"version":"5.8.2"}
+{"root":["./src/index.ts","./src/controller/authcontrollers.ts","./src/routes/authroutes.ts","./src/middleware/middleware.ts"],"version":"5.8.2"}
