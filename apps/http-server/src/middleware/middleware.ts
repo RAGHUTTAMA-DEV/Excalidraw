@@ -5,7 +5,7 @@ export default async function middleware(req: Request, res: Response, next: Next
     try{
          const token:any = req.headers.authorization?.split(" ")[1];
          if(!token){
-            res.status(401).json({
+          return  res.status(401).json({
                 message: "Unauthorized"
             });
          }
@@ -22,20 +22,20 @@ export default async function middleware(req: Request, res: Response, next: Next
                     req.user = user;
                     next()
                 }else{
-                    res.status(401).json({
+                  return  res.status(401).json({
                         message: "Unauthorized"
                     });
                 }
             }
             next();
          } catch (err) {
-            res.status(401).json({
+           return  res.status(401).json({
                 message: "Invalid or expired token"
             });
          }
 
     }catch(err){
-        res.status(500).json({
+      return  res.status(500).json({
             message: "Internal Server Error"
         })
     }

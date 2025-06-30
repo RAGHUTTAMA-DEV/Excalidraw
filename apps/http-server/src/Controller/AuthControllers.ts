@@ -51,6 +51,12 @@ export async function Register(req:Request,res:Response){
 }
 
 export function Logout(req:Request,res:Response){
+   try{
+    res.clearCookie("token")
+    res.status(200).json({message:"User logged out"})
+   }catch(err:any){
+       res.status(500).json({message:"Internal Server Error"})
+   }
 
 }
 

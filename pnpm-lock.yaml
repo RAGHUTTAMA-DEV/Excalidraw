@@ -81,12 +81,21 @@ importers:
 
   apps/ws-server:
     dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/socket.io':
         specifier: ^3.0.2
         version: 3.0.2
       dotenv:
         specifier: ^17.0.0
         version: 17.0.0
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
       socket.io:
         specifier: ^4.8.1
         version: 4.8.1
