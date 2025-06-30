@@ -9,7 +9,7 @@ router.post("/login",Login)
 router.post("/register",Register)
 
 router.post("/logout",Logout)
-
+//@ts-ignore
 router.get("/getme",middleware,Getme)
 
 export default router;

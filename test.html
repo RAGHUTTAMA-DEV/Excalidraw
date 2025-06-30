@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #log { border: 1px solid #ccc; padding: 10px; margin-top: 10px; width: 80%; height: 200px; overflow-y: scroll; background-color: #f9f9f9; }
+        .controls { margin-top: 20px; }
+        input, button { padding: 8px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+
+    <div class="controls">
+        <input type="text" id="token" placeholder="Your JWT Token" size="50">
+        <br/><br/>
+        <input type="text" id="roomId" placeholder="Room ID (e.g., 1)">
+        <button id="joinBtn">Join Room</button>
+        <button id="sendMsgBtn">Send Message to Room</button>
+    </div>
+
+    <h3>Event Log:</h3>
+    <div id="log"></div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const log = document.getElementById('log');
+        let socket;
+
+        function logEvent(message) {
+            const p = document.createElement('p');
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            const roomId = document.getElementById('roomId').value;
+            const token = document.getElementById('token').value;
+
+            if (!roomId || !token) {
+                logEvent('ERROR: Please provide a Room ID and a JWT token.');
+                return;
+            }
+            
+            if (socket && socket.connected) {
+                socket.disconnect();
+            }
+
+            // Connect to the server with the auth token
+            socket = io('http://localhost:8080', {
+                auth: {
+                    token: token
+                }
+            });
+
+            socket.on('connect', () => {
+                logEvent(`Connected to server. Attempting to join room: ${roomId}`);
+                socket.emit('join:Room', Number(roomId));
+            });
+
+            socket.on('disconnect', () => {
+                logEvent('Disconnected from server.');
+            });
+
+            socket.on('connect_error', (err) => {
+                logEvent(`Connection Error: ${err.message}`);
+            });
+            
+            socket.on('joined', (joinedRoomId, userId) => {
+                logEvent(`Successfully joined room: ${joinedRoomId}. Your user ID is ${userId}.`);
+            }); 
+
+            socket.on('message', (data) => {
+                logEvent(`Message received from room ${data.roomId} by user ${data.userId}`);
+            });
+
+            socket.on('error', (errorMessage) => {
+                logEvent(`Server Error: ${errorMessage}`);
+            });
+
+        });
+
+        document.getElementById('sendMsgBtn').addEventListener('click', () => {
+            const roomId = document.getElementById('roomId').value;
+            if (socket && socket.connected) {
+                logEvent(`Sending 'message' event to room: ${roomId}`);
+                socket.emit('message', Number(roomId));
+            } else {
+                logEvent('Not connected. Please join a room first.');
+            }
+        });
+    </script>
+</body>
+</html> 

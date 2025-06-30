@@ -23,14 +23,24 @@ model User{
   password String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  rooms Room[] @relation("RoomMembers")
+}
+
+enum Status{
+  ACTIVE
+  INACTIVE
+  PENDING
+
 }
 
 model Room{
   id Int @id @default(autoincrement())
-  name String
-  members User[]
+  name String @unique
+  members User[] @relation("RoomMembers")
+  description String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-
+  status Status @default(ACTIVE)
+  Roomlen Int @default(0)
+  MaxLen Int @default(10)
 }
