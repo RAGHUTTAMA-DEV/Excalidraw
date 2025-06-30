@@ -8,7 +8,7 @@ interface AuthenticatedRequest extends ExpressRequest {
 
 export  async function Createroom(req:Request,res:Response){
    try{ 
-      const {name,description}=req.body;
+      const {name,description,canvasState}=req.body;
       const isroom=await prisma.room.findUnique({
          where:{
             name:name
@@ -21,7 +21,8 @@ export  async function Createroom(req:Request,res:Response){
          const room=await prisma.room.create({
             data:{
                name:name,
-               description:description
+               description:description,
+               canvasState:canvasState
             }
          })
          res.status(200).json({message:"Room created successfully",room});
@@ -108,6 +109,44 @@ export async function JoinRoom(req: AuthenticatedRequest, res: Response){
       });
       res.status(200).json({message:"Joined room successfully", room: updatedRoom});
       return;
+   }catch(err:any){
+      res.status(500).json({message:err.message});
+      return;
+   }
+}
+
+export  async function GetCanvas(req:Request,res:Response){
+   try{
+      const roomId=Number(req.params.id);
+      const room=await prisma.room.findUnique({
+         where:{ id:roomId},
+         include:{members:true}
+      })
+      if(!room){
+         res.status(404).json({message:"Room not found"});
+         return;
+      }
+      res.status(200).json({message:"Canvas fetched successfully", room:room});
+      return;
+   }catch(err:any){
+      res.status(500).json({message:err.message});
+      return;
+   }
+}
+
+export  async function SaveCanvas(req:Request,res:Response){
+   try{
+      const roomId=Number(req.params.id);
+      const canvas=(req.body.canvas);
+      const room = await prisma.room.update({
+         where: { id: roomId },
+         data: { canvasState: canvas }
+      })
+      if(!room){
+         res.status(404).json({message:"Room not found"});
+         return;
+      }
+      res.status(200).json({message:"Canvas saved successfully", room: room});
    }catch(err:any){
       res.status(500).json({message:err.message});
       return;

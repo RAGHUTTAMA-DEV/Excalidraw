@@ -37,10 +37,35 @@ io.on("connection", (socket) => {
         })
         if(isExist){
             socket.join(roomId)
-            socket.emit("joined",roomId,userId)
+            socket.to(roomId).emit("user:joined",roomId,userId)
         }else{
             socket.emit("error","room not found")
         }
+    })
+
+    socket.on('leave:Room',(roomId)=>{
+        //Will fix the ts-ignore after the implementation of the main features
+        //@ts-ignore
+        const userId=socket.user.id;
+        socket.leave(roomId)
+        socket.emit("user:left",roomId,userId)
+    })
+    
+    socket.on('drawing:update',(roomId,elements)=>{
+        socket.to(roomId).emit("drawing:update",elements)
+    })
+
+    socket.on('cursor:move',(roomId,position)=>{
+        socket.to(roomId).emit("cursor:move",position)
+    })
+
+    socket.on('disconnect',(roomId)=>{
+        socket.leave(roomId)
+        socket.to(roomId).emit("user:disconnected",roomId)
+    })
+    socket.on("elements:delete",(roomId,elements)=>{
+        
+        socket.to(roomId).emit("elements:delete",elements)
     })
 }
 )

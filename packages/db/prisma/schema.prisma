@@ -43,4 +43,5 @@ model Room{
   status Status @default(ACTIVE)
   Roomlen Int @default(0)
   MaxLen Int @default(10)
+  canvasState Json? @default("[]") //to store the canvas states
 }
