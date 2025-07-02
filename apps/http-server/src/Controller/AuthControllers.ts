@@ -4,14 +4,14 @@ import jwt from "jsonwebtoken"
 export async function Login(req:Request,res:Response){
    try{
       const {email,password} = req.body;
-      const isuser=await prisma.user.findUnique({
+      const user=await prisma.user.findUnique({
          where:{
             email:email
          }
       })
-      if(isuser && isuser.password===password){
-         const token = jwt.sign({id:isuser.id},process.env.JWT_SECRET as string)
-         res.status(200).json({message:"Login Success",token})
+      if(user && user.password===password){
+         const token = jwt.sign({id:user.id},process.env.JWT_SECRET as string)
+         res.status(200).json({message:"Login Success",token,user})
       }
       else{
          res.status(401).json({message:"Invalid Credentials"})

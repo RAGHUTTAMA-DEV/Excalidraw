@@ -2,10 +2,19 @@ import express from 'express'
 import { Request,Response } from 'express';
 import dotenv from 'dotenv'
 dotenv.config()
+import cors from 'cors'
 import { prisma } from "@repo/db";
 import authroutes from './Routes/Authroutes.js';
 import roomroutes from "./Routes/Roomroutes.js";
 const app = express()
+
+// Use CORS middleware
+app.use(cors({
+    origin: '*', // Allow all origins for now
+    methods: ['GET', 'POST', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json())
 
 app.use('/api/auth',authroutes)

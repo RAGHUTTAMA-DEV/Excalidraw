@@ -22,12 +22,22 @@
         <button id="sendMsgBtn">Send Message to Room</button>
     </div>
 
+    <hr style="width: 80%; margin-top: 20px;">
+
+    <div class="controls">
+        <h3>Canvas Controls</h3>
+        <textarea id="canvasData" rows="5" cols="60" placeholder="Enter JSON canvas data here..."></textarea><br/>
+        <button id="getCanvasBtn">Get Canvas State</button>
+        <button id="saveCanvasBtn">Save Canvas State</button>
+    </div>
+
     <h3>Event Log:</h3>
     <div id="log"></div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
         const log = document.getElementById('log');
+        const canvasDataEl = document.getElementById('canvasData');
         let socket;
 
         function logEvent(message) {
@@ -82,6 +92,58 @@
                 logEvent(`Server Error: ${errorMessage}`);
             });
 
+        });
+
+        document.getElementById('getCanvasBtn').addEventListener('click', async () => {
+            const roomId = document.getElementById('roomId').value;
+            const token = document.getElementById('token').value;
+            if (!roomId || !token) {
+                logEvent('ERROR: Please provide a Room ID and a JWT token.');
+                return;
+            }
+
+            logEvent(`Fetching canvas state for room ${roomId}...`);
+            try {
+                const response = await fetch(`http://localhost:3001/api/room/canvas/${roomId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+                
+                logEvent(`SUCCESS: Canvas data received for room ${data.room.id}.`);
+                canvasDataEl.value = JSON.stringify(data.room.canvasState, null, 2);
+
+            } catch (err) {
+                logEvent(`ERROR: ${err.message}`);
+            }
+        });
+
+        document.getElementById('saveCanvasBtn').addEventListener('click', async () => {
+            const roomId = document.getElementById('roomId').value;
+            const token = document.getElementById('token').value;
+            const canvasJson = canvasDataEl.value;
+            
+            if (!roomId || !token || !canvasJson) {
+                logEvent('ERROR: Room ID, token, and canvas data are required.');
+                return;
+            }
+
+            logEvent(`Saving canvas state for room ${roomId}...`);
+            try {
+                const response = await fetch(`http://localhost:3001/api/room/save/${roomId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ canvas: JSON.parse(canvasJson) })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+                logEvent(`SUCCESS: ${data.message}`);
+            } catch (err) {
+                logEvent(`ERROR: ${err.message}`);
+            }
         });
 
         document.getElementById('sendMsgBtn').addEventListener('click', () => {

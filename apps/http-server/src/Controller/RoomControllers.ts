@@ -3,7 +3,7 @@ import { prisma} from "@repo/db";
 import type { Request as ExpressRequest } from "express";
 
 interface AuthenticatedRequest extends ExpressRequest {
-  user: { userID: number };
+  user: { id: number };
 }
 
 export  async function Createroom(req:Request,res:Response){
@@ -77,7 +77,6 @@ export async function DeleteRoom(req:Request,res:Response){
 export async function JoinRoom(req: AuthenticatedRequest, res: Response){
    try{
       const roomId = Number(req.params.id);
-      //@ts-ignore
       const userId = Number(req.user.id);
       const room = await prisma.room.findUnique({
          where: { id: roomId },
@@ -147,6 +146,7 @@ export  async function SaveCanvas(req:Request,res:Response){
          return;
       }
       res.status(200).json({message:"Canvas saved successfully", room: room});
+      return;
    }catch(err:any){
       res.status(500).json({message:err.message});
       return;
