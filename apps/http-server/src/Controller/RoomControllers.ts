@@ -133,6 +133,17 @@ export  async function GetCanvas(req:Request,res:Response){
    }
 }
 
+export async function GetAllRooms(req:Request,res:Response){
+   try{
+      const rooms=await prisma.room.findMany()
+      res.status(200).json({message:"Rooms fetched successfully",rooms})
+      return;
+   }catch(err:any){
+      res.status(500).json({message:err.message})
+      return;
+   }
+}
+
 export  async function SaveCanvas(req:Request,res:Response){
    try{
       const roomId=Number(req.params.id);

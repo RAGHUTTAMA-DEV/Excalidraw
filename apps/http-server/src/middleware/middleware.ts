@@ -35,11 +35,13 @@ export default async function middleware(req: AuthenticatedRequest, res: Respons
                 return;
             }
         } catch (err) {
+            console.error("JWT verification error:", err);
             res.status(401).json({ message: "Invalid or expired token" });
             return;
         }
 
     } catch (err) {
+        console.error("Middleware error:", err);
         res.status(500).json({ message: "Internal Server Error" });
         return;
     }

@@ -10,7 +10,7 @@ export async function Login(req:Request,res:Response){
          }
       })
       if(user && user.password===password){
-         const token = jwt.sign({id:user.id},process.env.JWT_SECRET as string)
+         const token = jwt.sign({id:user.id},process.env.JWT_SECRET as string,{expiresIn:"1d"})
          res.status(200).json({message:"Login Success",token,user})
       }
       else{
@@ -42,8 +42,8 @@ export async function Register(req:Request,res:Response){
                     lastName
                 }
             })
-            const token=await jwt.sign({user},process.env.JWT_SECRET as string,{expiresIn:"1d"})
-            res.status(200).json({message:"User created successfully",user})
+            const token=await jwt.sign({id:user.id},process.env.JWT_SECRET as string,{expiresIn:"1d"})
+            res.status(200).json({message:"User created successfully",token,user})
         }
     }catch(err){
         res.status(500).json({message:"Internal Server Error"})

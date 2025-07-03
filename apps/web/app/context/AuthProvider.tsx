@@ -9,9 +9,6 @@ import React from "react";
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { user, token, isSuccess } = AuthStore();
-    // Add <Toaster /> inside the returned JSX so toast notifications work correctly
-
-
     useEffect(() => {
         if (!user || !token || !isSuccess) {
             router.push("/login");

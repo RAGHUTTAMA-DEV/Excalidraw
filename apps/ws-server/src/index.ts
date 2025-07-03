@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
         if(isExist){
             socket.join(roomId)
             socket.to(roomId).emit("user:joined",roomId,userId)
-        }else{
+        }else{  
             socket.emit("error","room not found")
         }
     })
@@ -50,7 +50,7 @@ io.on("connection", (socket) => {
         socket.leave(roomId)
         socket.emit("user:left",roomId,userId)
     })
-    
+        
     socket.on('drawing:update',(roomId,elements)=>{
         socket.to(roomId).emit("drawing:update",elements)
     })
