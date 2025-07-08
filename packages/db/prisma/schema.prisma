@@ -24,6 +24,7 @@ model User{
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   rooms Room[] @relation("RoomMembers")
+  messages Message[] @relation("Sender")
 }
 
 enum Status{
@@ -44,4 +45,16 @@ model Room{
   Roomlen Int @default(0)
   MaxLen Int @default(10)
   canvasState Json? @default("[]") //to store the canvas states
+  messages Message[]
+}
+
+model Message{
+  id Int @id @default(autoincrement())
+  content String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  senderId Int
+  roomId Int
+  sender User @relation("Sender", fields: [senderId], references: [id])
+  room Room @relation(fields: [roomId], references: [id])
 }

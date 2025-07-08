@@ -125,7 +125,7 @@ export  async function GetCanvas(req:Request,res:Response){
          res.status(404).json({message:"Room not found"});
          return;
       }
-      res.status(200).json({message:"Canvas fetched successfully", room:room});
+      res.status(200).json({message:"Canvas fetched successfully", canvasState:room.canvasState});
       return;
    }catch(err:any){
       res.status(500).json({message:err.message});
@@ -135,15 +135,53 @@ export  async function GetCanvas(req:Request,res:Response){
 
 export async function GetAllRooms(req:Request,res:Response){
    try{
+      console.log("Fetching all rooms...");
       const rooms=await prisma.room.findMany()
+      console.log("Found rooms:", rooms);
+      
+      // If no rooms exist, create a default room
+      if (rooms.length === 0) {
+         console.log("No rooms found, creating default room...");
+         const defaultRoom = await prisma.room.create({
+            data: {
+               name: "General Room",
+               description: "Default room for all users",
+               status: "ACTIVE",
+               Roomlen: 0,
+               MaxLen: 10,
+               canvasState: []
+            }
+         });
+         console.log("Created default room:", defaultRoom);
+         res.status(200).json({message:"Rooms fetched successfully",rooms: [defaultRoom]})
+         return;
+      }
+      
       res.status(200).json({message:"Rooms fetched successfully",rooms})
+      return;
+   }catch(err:any){
+      console.error("Error fetching rooms:", err);
+      res.status(500).json({message:err.message})
+      return;
+   }
+}
+
+
+export async function GetMyRooms(req:AuthenticatedRequest,res:Response){
+   try{
+      const userId=Number(req.user.id);
+      const rooms=await prisma.room.findMany({
+         where:{
+            members:{some:{id:userId}}
+         }
+      })
+      res.status(200).json({message:"My rooms fetched successfully",rooms})
       return;
    }catch(err:any){
       res.status(500).json({message:err.message})
       return;
    }
 }
-
 export  async function SaveCanvas(req:Request,res:Response){
    try{
       const roomId=Number(req.params.id);

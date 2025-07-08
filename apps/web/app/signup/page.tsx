@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import AuthStore from "../context/AuthStore";
+import AuthStore from "../Zustand/AuthStore";
 
 export default function Signup() {
     const [email, setEmail] = useState("");

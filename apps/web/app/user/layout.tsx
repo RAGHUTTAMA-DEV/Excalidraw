@@ -1,5 +1,5 @@
 "use client"
-import AuthProvider from "../context/AuthProvider";
+import AuthProvider from "../Zustand/AuthProvider";
 export default function LoginLayout({
     children,
   }: {

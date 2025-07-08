@@ -2,7 +2,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import AuthStore from "../context/AuthStore";
+import AuthStore from "../Zustand/AuthStore";
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
