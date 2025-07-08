@@ -31,11 +31,17 @@ export default function Login() {
   };
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <input type="text" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
-      <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)}/>
-      <button onClick={() => {
-        LoginCall();
-      }}>Login</button>
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          LoginCall();
+        }}
+        className="flex flex-col items-center"
+      >
+        <input type="text" placeholder="Email" onChange={(e) => setEmail(e.target.value)}/>
+        <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)}/>
+        <button type="submit">Login</button>
+      </form>
     </div>
   );
 }

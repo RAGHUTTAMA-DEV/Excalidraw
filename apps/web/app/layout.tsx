@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { SocketProvider } from "./Zustand/SocketProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Toaster position="top-right" />
-        {children}
+        <SocketProvider>
+          <Toaster position="top-right" />
+          {children}
+        </SocketProvider>
       </body>
     </html>
   );

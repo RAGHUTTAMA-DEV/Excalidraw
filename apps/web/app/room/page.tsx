@@ -5,8 +5,7 @@ import { useRooms } from "../hooks/useRooms"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "react-hot-toast";
-import { initSocket } from "../lib/socket"
-import { Socket } from "socket.io-client";
+import { useSocket } from "../Zustand/SocketProvider";
 type CreateRoomForm={
     name:string;
     description:string;
@@ -30,22 +29,8 @@ export default function RoomPage(){
     }=useRooms()
     const [myRooms,setMyRooms]=useState([]) 
     const [err,setErr]=useState(false)
-    const socketRef = useRef<Socket | null>(null);
-
-    useEffect(() => {
-        // Use the token from AuthStore (or useAuth)
-        if (token && !socketRef.current) {
-            socketRef.current = initSocket(token);
-            // You can set up listeners here if needed
-        }
-        // Optionally, add cleanup here if you set up listeners
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-                socketRef.current = null;
-            }
-        };
-    }, [token]);
+    // Use the global socket if needed
+    const socket = useSocket();
 
     const getMyRooms=async()=>{
         try{
@@ -69,9 +54,23 @@ export default function RoomPage(){
         getMyRooms()
     },[token, router, fetchRooms])
 
-    const handleJoinRoom=async (roomId:string)=>{
-        
-    }
+    const handleJoinRoom = async (roomId: string) => {
+        try {
+            await axios.post(
+                `http://localhost:3001/api/room/join/${roomId}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            toast.success("Joined room successfully!");
+            getMyRooms(); // Refresh my rooms
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || "Failed to join room");
+        }
+    };
 
     const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

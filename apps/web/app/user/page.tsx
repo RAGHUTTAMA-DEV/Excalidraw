@@ -14,6 +14,7 @@ export default function User(){
             </button>
             <p>{JSON.stringify(user)}</p>
         <pre>{JSON.stringify(user, null, 2)}</pre>
+        {/* @ts-ignore */}
         <p>User Name: {user?.name ?? "No name available"}</p>
 
         <button onClick={()=>{
