@@ -36,10 +36,14 @@ export  async function Createroom(req:Request,res:Response){
 
 export async function GetRoom(req:Request,res:Response){
    try{
-      const roomId=req.params.id;
+      const roomId=Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
       const room = await prisma.room.findUnique({
          where: {
-            id: Number(roomId)
+            id: roomId
          }
       })
       if(!room){
@@ -56,10 +60,14 @@ export async function GetRoom(req:Request,res:Response){
 
 export async function DeleteRoom(req:Request,res:Response){
     try{
-      const roomId=req.params.id;
+      const roomId=Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
       const room = await prisma.room.delete({
          where: {
-            id: Number(roomId)
+            id: roomId
          }
       })
       if(!room){
@@ -77,6 +85,10 @@ export async function DeleteRoom(req:Request,res:Response){
 export async function JoinRoom(req: AuthenticatedRequest, res: Response){
    try{
       const roomId = Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
       const userId = Number(req.user.id);
       const room = await prisma.room.findUnique({
          where: { id: roomId },
@@ -117,6 +129,10 @@ export async function JoinRoom(req: AuthenticatedRequest, res: Response){
 export  async function GetCanvas(req:Request,res:Response){
    try{
       const roomId=Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
       const room=await prisma.room.findUnique({
          where:{ id:roomId},
          include:{members:true}
@@ -169,7 +185,7 @@ export async function GetAllRooms(req:Request,res:Response){
 
 export async function GetMyRooms(req:AuthenticatedRequest,res:Response){
    try{
-      const userId=Number(req.user.id);
+      const userId=Number(req.params.id);
       const rooms=await prisma.room.findMany({
          where:{
             members:{some:{id:userId}}
@@ -185,6 +201,10 @@ export async function GetMyRooms(req:AuthenticatedRequest,res:Response){
 export  async function SaveCanvas(req:Request,res:Response){
    try{
       const roomId=Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
       const canvas=(req.body.canvas);
       const room = await prisma.room.update({
          where: { id: roomId },

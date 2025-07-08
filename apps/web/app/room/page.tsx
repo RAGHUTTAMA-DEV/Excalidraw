@@ -5,7 +5,8 @@ import { useRooms } from "../hooks/useRooms"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "react-hot-toast";
-
+import { initSocket } from "../lib/socket"
+import { Socket } from "socket.io-client";
 type CreateRoomForm={
     name:string;
     description:string;
@@ -29,12 +30,28 @@ export default function RoomPage(){
     }=useRooms()
     const [myRooms,setMyRooms]=useState([]) 
     const [err,setErr]=useState(false)
+    const socketRef = useRef<Socket | null>(null);
+
+    useEffect(() => {
+        // Use the token from AuthStore (or useAuth)
+        if (token && !socketRef.current) {
+            socketRef.current = initSocket(token);
+            // You can set up listeners here if needed
+        }
+        // Optionally, add cleanup here if you set up listeners
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+        };
+    }, [token]);
 
     const getMyRooms=async()=>{
         try{
-            const response=await axios.get("http://localhost:3001/api/room/my-rooms",{
+            const response=await axios.get(`http://localhost:3001/api/room/my-rooms/${(user as any).id}`,{
                 headers:{
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`    
                 }
             })
             setMyRooms(response.data.rooms)
@@ -53,12 +70,7 @@ export default function RoomPage(){
     },[token, router, fetchRooms])
 
     const handleJoinRoom=async (roomId:string)=>{
-        const success = await joinRoom(roomId)
-        if (success) {
-            router.push(`/room/${roomId}`)
-        } else if (isError && errorMessage.includes("Token expired")) {
-            router.push('/login')
-        }
+        
     }
 
     const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,8 +126,8 @@ export default function RoomPage(){
                         <h2 className="text-xl font-semibold mb-4">My Rooms</h2>
                         {isLoading && <p>Loading rooms...</p>}
                         {isError && <p className="text-red-500">{errorMessage}</p>}
-                        {!isLoading && !isError && rooms.length === 0 && <p>No rooms available</p>}
-                        {!isLoading && !isError && rooms.map((room:any)=>(
+                        {!isLoading && !isError && myRooms.length === 0 && <p>No rooms available</p>}
+                        {!isLoading && !isError && myRooms.map((room:any)=>(
                             <div key={room.id} className="border p-4 mb-4 rounded-lg">
                                 <h3 className="font-medium">{room.name}</h3>
                                 <p className="text-gray-600 text-sm">{room.description}</p>

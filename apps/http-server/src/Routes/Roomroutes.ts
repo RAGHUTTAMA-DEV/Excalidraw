@@ -13,7 +13,7 @@ router.post('/', Createroom)
 router.delete('/:id', DeleteRoom )
 router.patch('/:id', UpdateRoom)
 router.get('/',GetAllRooms)
-router.get('/my-rooms',asyncHandler(middleware),asyncHandler(GetMyRooms))
+router.get('/my-rooms/:id',asyncHandler(middleware),asyncHandler(GetMyRooms))
 
 //Canvas routes
 router.post('/join/:id', asyncHandler(middleware), asyncHandler(JoinRoom));

@@ -34,7 +34,7 @@ io.on("connection", (socket) => {
             where:{
                 id:roomId
             }
-        })
+        });
         if(isExist){
             socket.join(roomId)
             socket.to(roomId).emit("user:joined",roomId,userId)

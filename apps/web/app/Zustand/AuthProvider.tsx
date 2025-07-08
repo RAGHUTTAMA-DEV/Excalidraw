@@ -15,12 +15,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             toast("This is not a valid user, please login again")
         }
     }, [user, token, isSuccess, router]);
-    <Toaster />
-
-
     return (
         <>
-            <Toaster position="top-right" />
             {children}
         </>
     ); 
