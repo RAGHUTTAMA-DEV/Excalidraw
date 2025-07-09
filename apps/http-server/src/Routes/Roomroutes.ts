@@ -1,5 +1,5 @@
 import  express from "express"
-import { Createroom, GetRoom, DeleteRoom, UpdateRoom, JoinRoom, SaveCanvas, GetCanvas, GetAllRooms, GetMyRooms } from "../Controller/RoomControllers.js"
+import { Createroom, GetRoom, DeleteRoom, UpdateRoom, JoinRoom, SaveCanvas, GetCanvas, GetAllRooms, GetMyRooms,GetRoomDetails } from "../Controller/RoomControllers.js"
 import middleware from "../middleware/middleware.js"
 import type { Request, Response, NextFunction } from "express";
 const router = express.Router()
@@ -14,6 +14,7 @@ router.delete('/:id', DeleteRoom )
 router.patch('/:id', UpdateRoom)
 router.get('/',GetAllRooms)
 router.get('/my-rooms/:id',asyncHandler(middleware),asyncHandler(GetMyRooms))
+router.get("/:id/details",asyncHandler(middleware),asyncHandler(GetRoomDetails))
 
 //Canvas routes
 router.post('/join/:id', asyncHandler(middleware), asyncHandler(JoinRoom));

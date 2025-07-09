@@ -5,7 +5,6 @@ import { useRooms } from "../hooks/useRooms"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "react-hot-toast";
-import { useSocket } from "../Zustand/SocketProvider";
 type CreateRoomForm={
     name:string;
     description:string;
@@ -30,7 +29,6 @@ export default function RoomPage(){
     const [myRooms,setMyRooms]=useState([]) 
     const [err,setErr]=useState(false)
     // Use the global socket if needed
-    const socket = useSocket();
 
     const getMyRooms=async()=>{
         try{

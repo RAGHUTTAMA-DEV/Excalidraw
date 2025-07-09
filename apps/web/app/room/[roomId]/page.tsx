@@ -4,53 +4,97 @@ import { useParams } from "next/navigation"
 import { toast } from "react-hot-toast"
 import axios from "axios"
 import AuthStore from "../../Zustand/AuthStore"
-import { useSocket } from "../../Zustand/SocketProvider";
 import type { Socket } from "socket.io-client";
+import { io } from "socket.io-client";
+
 
 
 export default function RoomPage(){
+    const [isConnected,setIsConnected]=useState(false)
+    const [members,setMembers]=useState<any[]>([])
+    const [roomDetails,setRoomDetails]=useState<any>()
+
     const {token}=AuthStore()
-    const params=useParams()
-    const [canvas,setCanvas]=useState<any[]>([])
-    const socket = useSocket();
-    useEffect(() => {
-        if (socket && token) {
-            const handleConnect = () => {
-                if (params.roomId) {
-                    socket.emit('join:Room', params.roomId);
-                    socket.emit('joinroom', params.roomId);
-                    console.log('Joining room', params.roomId);
-                }
-            };
-            // Only set up handlers after socket is connected
-            socket.on('connect', handleConnect);
-            socket.on('user:joined', (roomId, userId) => {
-                console.log(`User ${userId} joined room ${roomId}`);
-            });
-            socket.on('error', (msg) => {
-                toast.error(msg);
-            });
-            // If already connected (e.g., after refresh), call handleConnect immediately
-            if (socket.connected) {
-                handleConnect();
+    const {roomId}=useParams()
+    useEffect(()=>{
+        console.log(roomId)
+        getRoomDetails();
+        const newsocket=(io("http://localhost:8080",{
+            auth:{
+                token:token
             }
-            return () => {
-                socket.off('connect', handleConnect);
-                socket.off('user:joined');
-                socket.off('error');
-            };
+        }))
+        newsocket.on("connect",()=>{
+            console.log("connected to server");
+            setIsConnected(true)
+            newsocket.emit("join:Room",Number(roomId))
+        })
+        newsocket.on("disconnect",()=>{
+            console.log("disconnected from server")
+            setIsConnected(false)
+        })
+        newsocket.on("error",(err)=>{
+            console.log("error",err)
+        })
+        newsocket.on("message",(roomId,userId)=>{
+            console.log(`user ${userId} joined room ${roomId}`)
+            newsocket.emit("message",roomId)
+        })
+        newsocket.on("user:joined",(roomId,userId)=>{
+            console.log(`user ${userId} joined room ${roomId}`)
+            setMembers((prev:any)=>[...prev,userId])
+        })
+
+        
+       
+       
+    },[roomId,token])
+
+    async function getRoomDetails(){
+        try{
+            const response=await axios.get(`http://localhost:3001/api/room/${roomId}/details`,{
+                headers:{
+                    Authorization:`Bearer ${token}`
+                }
+            })
+            setMembers(response.data.members)
+            setRoomDetails(response.data.room)
+        }catch(err:any){
+            console.log(err)
         }
-    }, [socket, token, params.roomId]);
+    }
+    const [canvas,setCanvas]=useState<any[]>();
     return(
         <div>
-            <h1>Room {params.roomId}</h1>
+            <h1>Room {roomId}</h1>
            <div>
             <canvas id="canvas" width={1000} height={1000}></canvas>
-            
-           
+            {isConnected?<p>Connected to server</p>:<p>Disconnected from server</p>}
+            <h2>Members</h2>
+            <div>
+                {members.map((member)=>(
+                    <div key={member.id} className="p-2 border-b">
+                        <div><strong>Name:</strong> {member.name} {member.lastName ? member.lastName : ""}</div>
+                        <div><strong>Email:</strong> {member.email}</div>
+                        <div><strong>Joined:</strong> {new Date(member.createdAt).toLocaleString()}</div>
+                    </div>
+                ))}
+            </div>
            </div>   
 
-            
+        
+            <div>
+                {members.map((member, idx) => (
+                    <div 
+                        key={member.id ?? member.email ?? idx} 
+                        className="p-2 border-b"
+                    >
+                        <div><strong>Name:</strong> {member.name} {member.lastName ? member.lastName : ""}</div>
+                        <div><strong>Email:</strong> {member.email}</div>
+                        <div><strong>Joined:</strong> {member.createdAt ? new Date(member.createdAt).toLocaleString() : "Unknown"}</div>
+                    </div>
+                ))}
+            </div>
 
         </div>
     )

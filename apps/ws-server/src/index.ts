@@ -28,18 +28,22 @@ io.on("connection", (socket) => {
     })
 
     socket.on('join:Room',async (roomId)=>{
-        //@ts-ignore
+        try{
+            //@ts-ignore
         const userId=socket.user.id;
-         const isExist=await prisma.room.findFirst({
-            where:{
-                id:roomId
-            }
-        });
-        if(isExist){
-            socket.join(roomId)
-            socket.to(roomId).emit("user:joined",roomId,userId)
-        }else{  
-            socket.emit("error","room not found")
+        const isExist=await prisma.room.findFirst({
+           where:{
+               id:roomId
+           }
+       });
+       if(isExist){
+           socket.join(roomId)
+           socket.to(roomId).emit("user:joined",roomId,userId)
+       }else{  
+           socket.emit("error","room not found")
+       }
+        }catch(err:any){
+            socket.emit("error",err.message)
         }
     })
 

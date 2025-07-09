@@ -198,6 +198,29 @@ export async function GetMyRooms(req:AuthenticatedRequest,res:Response){
       return;
    }
 }
+
+export async function GetRoomDetails(req:Request,res:Response){
+   try{
+      const roomId=Number(req.params.id);
+      if (!roomId || isNaN(roomId)) {
+         res.status(400).json({ message: "Invalid or missing room id" });
+         return;
+      }
+      const room=await prisma.room.findUnique({
+         where:{id:roomId},
+         include:{members:true}
+      })
+      if(!room){
+         res.status(404).json({message:"Room not found"});
+         return;
+      }
+      res.status(200).json({message:"Room details fetched successfully",room,members:room.members})
+      return;
+   }catch(err:any){
+      res.status(500).json({message:err.message})
+      return;
+   }
+}
 export  async function SaveCanvas(req:Request,res:Response){
    try{
       const roomId=Number(req.params.id);
