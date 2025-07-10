@@ -59,6 +59,19 @@ io.on("connection", (socket) => {
         socket.to(roomId).emit("drawing:update",elements)
     })
 
+    socket.on("drawing:clear",(roomId)=>{
+        socket.to(roomId).emit("drawing:clear")
+    })
+
+    socket.on("whiteboard:update",(roomId,elements)=>{
+        console.log(roomId,elements)
+        socket.to(roomId).emit("whiteboard:update",elements)
+    })
+
+    socket.on("whiteboard:clear",(roomId)=>{
+        socket.to(roomId).emit("whiteboard:clear")
+    })
+
     socket.on('cursor:move',(roomId,position)=>{
         socket.to(roomId).emit("cursor:move",position)
     })
