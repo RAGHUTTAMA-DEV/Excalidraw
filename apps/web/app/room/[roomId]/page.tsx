@@ -42,14 +42,21 @@ export default function RoomPage() {
       console.log("Socket error:", err)
     })
 
-    newsocket.on("message", (roomId, message) => {
-      setMessages((prev)=>[...prev,message])
+    newsocket.on("message", (message) => {
+      setMessages((prev) => [...prev, message])
     })
 
     newsocket.on("user:joined", (roomId, userId) => {
       console.log(`user ${userId} joined room ${roomId}`)
       setMembers((prev) => [...prev, userId])
-    }) 
+    })
+
+    newsocket.on("room:data", (data) => {
+      console.log("Received room data:", data)
+      setMessages(data.messages || [])
+      // You can also set canvas state here when you implement the canvas
+      // setCanvasState(data.canvasState || [])
+    })
 
     return () => {
       newsocket.disconnect()
@@ -58,9 +65,10 @@ export default function RoomPage() {
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
-    socket?.emit("message", roomId, message);
+    socket?.emit("message",
+       Number(roomId), message);
     setMessages(prev => [...prev, message]);
-    setMessage(""); // clear input after sending
+    setMessage(""); 
   }
 
   async function getRoomDetails() {
@@ -78,7 +86,6 @@ export default function RoomPage() {
   return (
     <div>
       <h1>Room {roomId}</h1>
-      <canvas id="canvas" width={1000} height={1000}></canvas>
       {isConnected ? (
         <p className="text-green-500">Connected to server</p>
       ) : (
@@ -122,8 +129,19 @@ export default function RoomPage() {
          </div>
          <div>
             {messages.map((message, idx) => (
-                <div key={typeof message === 'object' && message.id ? message.id : `${idx}-${message}`}>
-                    {typeof message === 'object' && message.text ? message.text : message}
+                <div key={message.id || `${idx}-${message.content}`} className="p-2 border-b border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <strong className="text-blue-600">
+                            {message.sender?.name} {message.sender?.lastName}
+                        </strong>
+                        <span className="text-xs text-gray-500">
+                            {message.createdAt ? 
+                                new Date(message.createdAt).toLocaleTimeString() : 
+                                'Just now'
+                            }
+                        </span>
+                    </div>
+                    <div className="mt-1">{message.content}</div>
                 </div>
             ))}
          </div>

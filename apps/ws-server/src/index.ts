@@ -19,31 +19,78 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("user disconnected");
     });
-    socket.on("message", (roomId) => {
-        //@ts-ignore
-      const userId=socket.user.id;
-      console.log(roomId,userId)
-      socket.to(roomId).emit("message", { userId, roomId });
-    
+    socket.on("message", async (roomId: number, messageContent: string) => {
+        try {
+            //@ts-ignore
+            const userId = socket.user.id;
+            console.log(roomId, userId, messageContent);
+            
+            const savedMessage = await prisma.message.create({
+                data: {
+                    content: messageContent,
+                    senderId: userId,
+                    roomId: roomId
+                },
+                include: {
+                    sender: {
+                        select: {
+                            id: true,
+                            name: true,
+                            lastName: true,
+                            email: true
+                        }
+                    }
+                }
+            });
+            
+            socket.to(roomId.toString()).emit("message", savedMessage);
+            socket.emit("message", savedMessage); 
+        } catch (error) {
+            console.error("Error saving message:", error);
+            socket.emit("error", "Failed to save message");
+        }
     })
 
-    socket.on('join:Room',async (roomId)=>{
-        try{
+    socket.on('join:Room', async (roomId) => {
+        try {
             //@ts-ignore
-        const userId=socket.user.id;
-        const isExist=await prisma.room.findFirst({
-           where:{
-               id:roomId
-           }
-       });
-       if(isExist){
-           socket.join(roomId)
-           socket.to(roomId).emit("user:joined",roomId,userId)
-       }else{  
-           socket.emit("error","room not found")
-       }
-        }catch(err:any){
-            socket.emit("error",err.message)
+            const userId = socket.user.id;
+            const room = await prisma.room.findFirst({
+                where: {
+                    id: roomId
+                },
+                include: {
+                    messages: {
+                        include: {
+                            sender: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    lastName: true,
+                                    email: true
+                                }
+                            }
+                        },
+                        orderBy: {
+                            createdAt: 'asc'
+                        }
+                    }
+                }
+            });
+            
+            if (room) {
+                socket.join(roomId.toString());
+                socket.to(roomId.toString()).emit("user:joined", roomId, userId);
+                
+                socket.emit("room:data", {
+                    messages: room.messages,
+                    canvasState: room.canvasState
+                });
+            } else {
+                socket.emit("error", "room not found");
+            }
+        } catch (err: any) {
+            socket.emit("error", err.message);
         }
     })
 
@@ -51,38 +98,49 @@ io.on("connection", (socket) => {
         //Will fix the ts-ignore after the implementation of the main features
         //@ts-ignore
         const userId=socket.user.id;
-        socket.leave(roomId)
+        socket.leave(roomId.toString())
         socket.emit("user:left",roomId,userId)
     })
         
-    socket.on('drawing:update',(roomId,elements)=>{
-        socket.to(roomId).emit("drawing:update",elements)
+    socket.on('drawing:update', async (roomId, elements) => {
+        try {
+            await prisma.room.update({
+                where: { id: roomId },
+                data: { canvasState: elements }
+            });
+            
+            socket.to(roomId.toString()).emit("drawing:update", elements);
+        } catch (error) {
+            console.error("Error saving canvas state:", error);
+        }
     })
 
-    socket.on("drawing:clear",(roomId)=>{
-        socket.to(roomId).emit("drawing:clear")
+    socket.on("drawing:clear", async (roomId) => {
+        try {
+            await prisma.room.update({
+                where: { id: roomId },
+                data: { canvasState: [] }
+            });
+            
+            socket.to(roomId.toString()).emit("drawing:clear");
+        } catch (error) {
+            console.error("Error clearing canvas state:", error);
+        }
     })
 
-    socket.on("whiteboard:update",(roomId,elements)=>{
-        console.log(roomId,elements)
-        socket.to(roomId).emit("whiteboard:update",elements)
-    })
-
-    socket.on("whiteboard:clear",(roomId)=>{
-        socket.to(roomId).emit("whiteboard:clear")
-    })
+    
 
     socket.on('cursor:move',(roomId,position)=>{
         socket.to(roomId).emit("cursor:move",position)
     })
 
     socket.on('disconnect',(roomId)=>{
-        socket.leave(roomId)
-        socket.to(roomId).emit("user:disconnected",roomId)
+        socket.leave(roomId.toString())
+        socket.to(roomId.toString()).emit("user:disconnected",roomId)
     })
     socket.on("elements:delete",(roomId,elements)=>{
         
-        socket.to(roomId).emit("elements:delete",elements)
+        socket.to(roomId.toString()).emit("elements:delete",elements)
     })
 }
 )
