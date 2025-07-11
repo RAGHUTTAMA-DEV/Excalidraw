@@ -58,3 +58,4 @@ model Message{
   sender User @relation("Sender", fields: [senderId], references: [id])
   room Room @relation(fields: [roomId], references: [id])
 }
+

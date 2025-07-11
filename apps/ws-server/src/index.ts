@@ -5,6 +5,7 @@ dotenv.config()
 import { Socketmidlleware } from "./Socketmidlleware";
 const httpServer = createServer();
 import { prisma } from "@repo/db";
+import { DrawingElement } from "@repo/db/src/schema";
 
 const io=new Server(httpServer,{
     cors: {
@@ -128,8 +129,52 @@ io.on("connection", (socket) => {
         }
     })
 
+    socket.on("drawing:undo",async (roomId)=>{
+        try {
+            const room=await prisma.room.findFirst({
+                where: { id: roomId },
+                select: {
+                    canvasState: true
+                }
+            })
+            if(room){
+                const canvasState=room.canvasState as DrawingElement[];
+                const lastElement=canvasState[canvasState.length-1];
+                if(lastElement){
+                    canvasState.pop();
+                    await prisma.room.update({
+                        where: { id: roomId },
+                        data: { canvasState: canvasState }
+                    })
+                    socket.to(roomId.toString()).emit("drawing:update",canvasState)
+                }
+            }
+        }catch(error){
+            console.error("Error undoing canvas state:", error);
+        }
+    })
+  //need to add redo 
     
+    socket.on("drawing:clear",async (roomId)=>{
+        try{
+            const room=await prisma.room.findFirst({
+                where: { id: roomId },
+                select: {
+                    canvasState: true
+                }
+            })
+            if(room){
+                await prisma.room.update({
+                    where: { id: roomId },
+                    data: { canvasState: [] }
+                })
+                socket.to(roomId.toString()).emit("drawing:clear")
+            }
+        }catch(error){
+            console.error("Error clearing canvas state:", error);
+        }
 
+    })
     socket.on('cursor:move',(roomId,position)=>{
         socket.to(roomId).emit("cursor:move",position)
     })
