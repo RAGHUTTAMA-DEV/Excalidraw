@@ -5,7 +5,7 @@ dotenv.config()
 import { Socketmidlleware } from "./Socketmidlleware";
 const httpServer = createServer();
 import { prisma } from "@repo/db";
-import { DrawingElement } from "@repo/db/src/schema";
+//import { DrawingElement } from "@repo/db/src/schema";
 
 const io=new Server(httpServer,{
     cors: {
@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
                 }
             })
             if(room){
-                const canvasState=room.canvasState as DrawingElement[];
+                const canvasState=room.canvasState as any[];
                 const lastElement=canvasState[canvasState.length-1];
                 if(lastElement){
                     canvasState.pop();

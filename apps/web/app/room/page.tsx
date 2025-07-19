@@ -5,6 +5,7 @@ import { useRooms } from "../hooks/useRooms"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "react-hot-toast";
+import Whiteboard from "../components/Whiteboard";
 type CreateRoomForm={
     name:string;
     description:string;
@@ -148,6 +149,7 @@ export default function RoomPage(){
                     </div>
                 </div>
             </div>
+            <Whiteboard/>
         </div>
     )
 }
