@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import AuthStore from "../Zustand/AuthStore";
@@ -9,26 +9,31 @@ import { api, apiErrorMessage } from "../lib/api";
 import { paths } from "../lib/paths";
 import { AppHeader } from "../components/AppHeader";
 import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
-import { Input } from "../components/ui/Input";
+import { CreateRoomModal } from "../components/rooms/CreateRoomModal";
+import { EmptyBoardsArt } from "../components/rooms/EmptyBoardsArt";
+import { RoomCard, RoomCardSkeleton } from "../components/rooms/RoomCard";
 import type { Room } from "../Zustand/RoomStore";
 
 export default function RoomsPage() {
   const { token, user } = AuthStore();
   const router = useRouter();
-  const nameRef = useRef<HTMLInputElement>(null);
-  const descriptionRef = useRef<HTMLInputElement>(null);
   const { rooms, isLoading, isError, errorMessage, fetchRooms } = useRooms();
   const [myRooms, setMyRooms] = useState<Room[]>([]);
+  const [myLoading, setMyLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const getMyRooms = async () => {
     if (!user?.id) return;
+    setMyLoading(true);
     try {
       const response = await api.get<{ rooms: Room[] }>(`/api/room/my-rooms/${user.id}`);
-      setMyRooms(response.data.rooms);
+      setMyRooms(response.data.rooms ?? []);
     } catch (err) {
-      console.log(err);
+      toast.error(apiErrorMessage(err, "Could not load your boards"));
+    } finally {
+      setMyLoading(false);
     }
   };
 
@@ -41,118 +46,145 @@ export default function RoomsPage() {
     void getMyRooms();
   }, [token, router, fetchRooms]);
 
+  const mineIds = useMemo(() => new Set(myRooms.map((room) => room.id)), [myRooms]);
+  const discover = rooms.filter((room) => !mineIds.has(room.id));
+
   const openRoom = (roomId: number) => {
     router.push(paths.room(roomId));
   };
 
-  const handleJoinRoom = async (roomId: number) => {
+  const joinThenOpen = async (roomId: number) => {
+    setBusyId(roomId);
     try {
       await api.post(`/api/room/join/${roomId}`);
-      toast.success("Joined room");
+      toast.success("Pulled up a stool");
       openRoom(roomId);
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Failed to join room"));
-    }
-  };
-
-  const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      const response = await api.post<{ room: Room }>("/api/room", {
-        name: nameRef.current?.value,
-        description: descriptionRef.current?.value,
-      });
-      const room = response.data.room;
-      if (room?.id) {
-        try {
-          await api.post(`/api/room/join/${room.id}`);
-        } catch {
-          // already a member, or join is optional after create
-        }
-        toast.success("Room created");
-        openRoom(room.id);
+      const message = apiErrorMessage(err, "Failed to join room");
+      if (message.toLowerCase().includes("already")) {
+        openRoom(roomId);
         return;
       }
-      toast.success("Room created");
-      await fetchRooms();
-      await getMyRooms();
-    } catch (err) {
-      toast.error(apiErrorMessage(err, "Failed to create room"));
+      toast.error(message);
+    } finally {
+      setBusyId(null);
     }
   };
 
+  const createRoom = async (payload: { name: string; description: string }) => {
+    try {
+      const response = await api.post<{ room: Room }>("/api/room", payload);
+      const room = response.data.room;
+      if (!room?.id) {
+        throw new Error("Room was created without an id");
+      }
+      try {
+        await api.post(`/api/room/join/${room.id}`);
+      } catch {
+        // creator may already be attached
+      }
+      toast.success("Board pinned");
+      openRoom(room.id);
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, "Failed to create room"));
+    }
+  };
+
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="relative flex min-h-dvh flex-col">
+      <div className="paper-grain pointer-events-none absolute inset-0 opacity-40" />
       <AppHeader />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-8">
-        <div>
-          <h1 className="font-display text-4xl italic">Boards</h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            Create or join a board, then open the canvas. Hub polish is Phase 3.
-          </p>
+      <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-6 py-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.26em] text-copper">Studio floor</p>
+            <h1 className="mt-2 font-display text-5xl italic leading-none">
+              Evening, {firstName}.
+            </h1>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-ink-soft">
+              Your sheets on the left of the day. Strangers’ tables below, if you want a seat.
+            </p>
+          </div>
+          <Button className="px-5 py-3" onClick={() => setCreateOpen(true)}>
+            New board
+          </Button>
         </div>
 
         <section>
-          <h2 className="mb-4 font-display text-2xl">All rooms</h2>
-          {isLoading && <p className="text-ink-soft">Loading rooms…</p>}
-          {isError && <p className="text-danger">{errorMessage}</p>}
-          {!isLoading && !isError && rooms.length === 0 && (
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-3xl italic">My boards</h2>
+            <span className="text-xs uppercase tracking-[0.16em] text-ink-soft">
+              {myRooms.length} pinned
+            </span>
+          </div>
+          {myLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+            </div>
+          ) : myRooms.length === 0 ? (
             <EmptyState
-              title="No boards yet"
-              description="Create one below to start a shared drafting table."
+              visual={<EmptyBoardsArt />}
+              title="Create your first board"
+              description="A blank sheet with your name in the corner. Invite others once the ink is down."
+              action={<Button onClick={() => setCreateOpen(true)}>Pin a sheet</Button>}
             />
-          )}
-          <div className="grid gap-3">
-            {!isLoading &&
-              !isError &&
-              rooms.map((room) => (
-                <Card key={room.id}>
-                  <h3 className="font-medium">{room.name}</h3>
-                  {room.description ? (
-                    <p className="text-sm text-ink-soft">{room.description}</p>
-                  ) : null}
-                  <Button className="mt-3" onClick={() => void handleJoinRoom(room.id)}>
-                    Join and open
-                  </Button>
-                </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {myRooms.map((room) => (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  actionLabel="Open"
+                  onAction={() => openRoom(room.id)}
+                />
               ))}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 font-display text-2xl">My rooms</h2>
-          {!isLoading && myRooms.length === 0 && (
-            <EmptyState title="You have not joined a board yet" />
+            </div>
           )}
-          <div className="grid gap-3">
-            {myRooms.map((room) => (
-              <Card key={room.id}>
-                <h3 className="font-medium">{room.name}</h3>
-                <p className="text-sm text-ink-soft">{room.description}</p>
-                <Button className="mt-3" onClick={() => openRoom(room.id)}>
-                  Open canvas
-                </Button>
-              </Card>
-            ))}
-          </div>
         </section>
 
         <section>
-          <h2 className="mb-4 font-display text-2xl">Create room</h2>
-          <Card>
-            <form className="flex flex-col gap-3" onSubmit={handleCreateRoom}>
-              <Input label="Room name" name="name" placeholder="War room" ref={nameRef} />
-              <Input
-                label="Description"
-                name="description"
-                placeholder="Optional"
-                ref={descriptionRef}
-              />
-              <Button type="submit">Create and open</Button>
-            </form>
-          </Card>
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-3xl italic">Discover</h2>
+            <span className="text-xs uppercase tracking-[0.16em] text-ink-soft">
+              Join, then the canvas
+            </span>
+          </div>
+          {isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+            </div>
+          ) : isError ? (
+            <p className="text-danger">{errorMessage}</p>
+          ) : discover.length === 0 ? (
+            <EmptyState
+              title="No other tables"
+              description="You already sit at every board, or the floor is empty. Make another."
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {discover.map((room) => (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  actionLabel="Join"
+                  busy={busyId === room.id}
+                  onAction={() => void joinThenOpen(room.id)}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </main>
+      <CreateRoomModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={createRoom}
+      />
     </div>
   );
 }

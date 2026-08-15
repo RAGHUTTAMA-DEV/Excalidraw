@@ -5,10 +5,11 @@ type EmptyStateProps = {
   title: string;
   description?: string;
   action?: ReactNode;
+  visual?: ReactNode;
   className?: string;
 };
 
-export function EmptyState({ title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ title, description, action, visual, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -16,7 +17,8 @@ export function EmptyState({ title, description, action, className }: EmptyState
         className
       )}
     >
-      <h3 className="font-display text-2xl text-ink">{title}</h3>
+      {visual}
+      <h3 className="font-display text-2xl italic text-ink">{title}</h3>
       {description ? (
         <p className="max-w-md text-sm leading-relaxed text-ink-soft">{description}</p>
       ) : null}

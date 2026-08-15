@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Newsreader, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { AuthHydration } from "./components/AuthHydration";
 
 const newsreader = Newsreader({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${newsreader.variable} ${schibsted.variable} antialiased`}>
+        <AuthHydration />
         <Toaster
           position="top-right"
           toastOptions={{

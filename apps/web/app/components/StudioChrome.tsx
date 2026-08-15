@@ -24,7 +24,7 @@ export function StudioChrome({
 }: StudioChromeProps) {
   return (
     <div className={cn("flex h-dvh flex-col bg-paper text-ink", className)}>
-      <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-line px-3">
+      <header className="z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-line bg-paper/90 px-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href={paths.rooms}
@@ -50,7 +50,7 @@ export function StudioChrome({
           {actions}
         </div>
       </header>
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }

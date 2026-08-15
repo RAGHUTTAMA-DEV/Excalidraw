@@ -84,8 +84,20 @@ const AuthStore = create<AuthState>()(
         user: state.user,
         token: state.token,
       }),
-      onRehydrateStorage: () => () => {
-        AuthStore.getState().setHasHydrated(true);
+      merge: (persisted, current) => {
+        const stored = (persisted ?? {}) as Partial<AuthState>;
+        const token = stored.token ? stored.token : null;
+        const user = stored.user && typeof stored.user === "object" && "id" in stored.user
+          ? stored.user
+          : null;
+        return {
+          ...current,
+          user,
+          token,
+        };
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
       },
     }
   )

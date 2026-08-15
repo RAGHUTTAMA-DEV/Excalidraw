@@ -106,13 +106,15 @@ Split layout: ink illustration on one side, form on the other (stacks on mobile)
 
 ## Phase 3 — Rooms hub
 
+Status: **done**
+
 One page, three zones, no nested canvas:
 
 1. **Header** — greeting, create button
 2. **My boards** — cards: name, description, member count, updated, **Open**
 3. **Discover / join** — other rooms with **Join**, then open
 
-Create room = modal (name + description only). Drop the `canvasState` JSON input.
+Create room = modal (name + description only).
 
 Empty state: illustration + “Create your first board”.
 
@@ -124,7 +126,15 @@ Join then `router.push(/rooms/${id})` in one action.
 
 ## Phase 4 — Canvas studio layout
 
-`/rooms/[id]` should be **one full viewport**. Everything else floats:
+Status: **done**
+
+`/rooms/[id]` is one full viewport. Chrome floats:
+
+- Thin top bar: back, room name, live dot, members, chat
+- Floating tool pill with SVG icons
+- Paper canvas fills the leftover box via `ResizeObserver`
+- Ink properties as a popover
+- Chat as a right drawer, closed by default
 
 ```
 ┌─────────────────────────────────────────────┐

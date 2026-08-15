@@ -9,10 +9,6 @@ export function HeroCtas() {
   const { token, hasHydrated } = AuthStore();
   const signedIn = hasHydrated && Boolean(token);
 
-  if (!hasHydrated) {
-    return <div className="mt-8 h-12 w-64 rounded-md bg-line/60" />;
-  }
-
   if (signedIn) {
     return (
       <div className="mt-8 flex flex-wrap gap-3">

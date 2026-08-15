@@ -17,10 +17,6 @@ type FieldErrors = {
   password?: string;
 };
 
-function isEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const { login, isLoading, setIsLoading } = AuthStore();
@@ -36,11 +32,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
     if (mode === "signup" && name.trim().length < 2) {
       next.name = "Give us at least two letters.";
     }
-    if (!isEmail(email.trim())) {
-      next.email = "That does not look like an email.";
+    if (!email.trim()) {
+      next.email = "Enter the email you used to sign up.";
     }
-    if (password.length < 6) {
-      next.password = "Use 6 or more characters.";
+    if (!password) {
+      next.password = "Enter a password.";
     }
     setFieldErrors(next);
     return Object.keys(next).length === 0;
@@ -104,10 +100,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
         ) : null}
         <Input
           label="Email"
-          type="email"
+          type="text"
           name="email"
-          autoComplete="email"
-          placeholder="you@studio.com"
+          autoComplete="username"
+          inputMode="text"
+          placeholder="ada or you@studio.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={fieldErrors.email}
