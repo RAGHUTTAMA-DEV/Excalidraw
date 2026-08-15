@@ -28,7 +28,7 @@ export function SelectIcon() {
 export function RectIcon() {
   return (
     <Icon>
-      <rect x="5" y="7" width="14" height="10" rx="1" />
+      <rect x="5" y="7" width="14" height="10" rx="3.5" />
     </Icon>
   );
 }

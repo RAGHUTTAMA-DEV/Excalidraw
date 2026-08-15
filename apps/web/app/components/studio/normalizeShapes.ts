@@ -1,3 +1,4 @@
+import { normalizeShape, recomputeConnectors } from "./geometry";
 import type { Shape } from "./types";
 
 export function normalizeShapes(raw: unknown): Shape[] {
@@ -11,9 +12,11 @@ export function normalizeShapes(raw: unknown): Shape[] {
     }
   }
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is Shape => {
-    if (!item || typeof item !== "object") return false;
+  const shapes = value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
     const shape = item as Partial<Shape>;
-    return Boolean(shape.id && shape.type);
+    if (!shape.id || !shape.type) return [];
+    return [normalizeShape(shape as Partial<Shape> & { id: string; type: Shape["type"] })];
   });
+  return recomputeConnectors(shapes);
 }

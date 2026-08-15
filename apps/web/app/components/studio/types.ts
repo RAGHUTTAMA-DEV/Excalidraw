@@ -25,6 +25,8 @@ export type Shape = {
   strokeWidth: number;
   roughness: number;
   seed: number;
+  startBinding?: string | null;
+  endBinding?: string | null;
 };
 
 export type RoomMember = {
