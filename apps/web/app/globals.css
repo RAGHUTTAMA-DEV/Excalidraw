@@ -1,1 +1,82 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: var(--font-newsreader), "Iowan Old Style", "Palatino Linotype", serif;
+  --font-sans: var(--font-schibsted), "Segoe UI", sans-serif;
+  --color-paper: #f4efe4;
+  --color-paper-deep: #ebe4d4;
+  --color-ink: #1c1917;
+  --color-ink-soft: #57534e;
+  --color-copper: #c45c26;
+  --color-copper-hot: #a84c1e;
+  --color-line: #d6cfc0;
+  --color-danger: #9f1239;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(rgba(28, 25, 23, 0.035) 0.6px, transparent 0.6px);
+  background-size: 14px 14px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-copper) 35%, transparent);
+}
+
+.paper-grain {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+
+.desk-grid {
+  background-image:
+    linear-gradient(to right, rgba(196, 92, 38, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(196, 92, 38, 0.09) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-d1 { animation-delay: 90ms; }
+.rise-d2 { animation-delay: 180ms; }
+.rise-d3 { animation-delay: 270ms; }
+.rise-d4 { animation-delay: 360ms; }
+
+@keyframes tilt-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-3.5deg);
+  }
+}
+
+.sheet-tilt {
+  animation: tilt-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 220ms;
+}

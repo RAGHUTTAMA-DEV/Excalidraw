@@ -1,7 +1,5 @@
-"use client";
-
 import { RequireAuth } from "../components/AuthGuards";
 
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
+export default function RoomsLayout({ children }: { children: React.ReactNode }) {
   return <RequireAuth>{children}</RequireAuth>;
 }

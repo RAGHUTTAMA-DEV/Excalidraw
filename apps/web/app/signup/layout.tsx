@@ -1,6 +1,6 @@
 import { RedirectIfAuthed } from "../components/AuthGuards";
 
-export default function LoginLayout({
+export default function SignupLayout({
   children,
 }: {
   children: React.ReactNode;

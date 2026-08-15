@@ -1,35 +1,94 @@
-import {create} from "zustand";
-import {persist,createJSONStorage} from "zustand/middleware";
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import RoomStore from "./RoomStore";
+import { disconnectSocket } from "../lib/socket";
 
-interface AuthStoreInterface{
-    user:JSON;
-    token:string;
-    isLoading:boolean;
-    isError:boolean;
-    isSuccess:boolean;
-    setUser:(user:JSON)=>void;
-    setToken:(token:string)=>void;
-    setIsLoading:(isLoading:boolean)=>void;
-    setIsError:(isError:boolean)=>void;
-    setIsSuccess:(isSuccess:boolean)=>void;
+export type AuthUser = {
+  id: number;
+  name: string;
+  email: string;
+  lastName?: string | null;
+};
+
+export function toPublicUser(user: {
+  id: number;
+  name: string;
+  email: string;
+  lastName?: string | null;
+}): AuthUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    lastName: user.lastName ?? null,
+  };
 }
 
-const AuthStore = create<AuthStoreInterface>()(
-    persist((set)=>({
-        user:{} as JSON,
-        token:"",
-        isLoading:false,
-        isError:false,
-        isSuccess:false,
-        setUser:(user:JSON)=>set({user}),
-        setToken:(token:string)=>set({token}),
-        setIsLoading:(isLoading:boolean)=>set({isLoading}),
-        setIsError:(isError:boolean)=>set({isError}),
-        setIsSuccess:(isSuccess:boolean)=>set({isSuccess}),
-    }),{
-        name:"auth",
-        storage:createJSONStorage(()=>localStorage),
-    })
-)
+type AuthState = {
+  user: AuthUser | null;
+  token: string | null;
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string;
+  hasHydrated: boolean;
+  setUser: (user: AuthUser | null) => void;
+  setToken: (token: string | null) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  setIsError: (isError: boolean) => void;
+  setErrorMessage: (message: string) => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
+  login: (user: AuthUser, token: string) => void;
+  logout: () => void;
+};
+
+const AuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isLoading: false,
+      isError: false,
+      errorMessage: "",
+      hasHydrated: false,
+      setUser: (user) => set({ user }),
+      setToken: (token) => set({ token }),
+      setIsLoading: (isLoading) => set({ isLoading }),
+      setIsError: (isError) => set({ isError }),
+      setErrorMessage: (errorMessage) =>
+        set({ errorMessage, isError: Boolean(errorMessage) }),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+      login: (user, token) =>
+        set({
+          user,
+          token,
+          isError: false,
+          errorMessage: "",
+          isLoading: false,
+        }),
+      logout: () => {
+        disconnectSocket();
+        RoomStore.getState().clearRooms();
+        set({
+          user: null,
+          token: null,
+          isError: false,
+          errorMessage: "",
+          isLoading: false,
+        });
+      },
+    }),
+    {
+      name: "auth",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+      }),
+      onRehydrateStorage: () => () => {
+        AuthStore.getState().setHasHydrated(true);
+      },
+    }
+  )
+);
 
 export default AuthStore;

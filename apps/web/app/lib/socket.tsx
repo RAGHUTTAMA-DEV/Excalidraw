@@ -1,33 +1,39 @@
-import { io } from "socket.io-client"
-import { Socket } from "socket.io-client"
-let socket:Socket;
-const connectSocket=(token: string)=>{
-    if (!token) {
-        throw new Error("No token found in localStorage");
-    }
-    socket=io("http://localhost:8080",{
-        transports:["websocket"],
-        reconnection:true,
-        reconnectionAttempts:5,
-        reconnectionDelay:1000,
-        reconnectionDelayMax:5000,
-        autoConnect:true,
-        withCredentials:true,
-        auth: {
-            token: token
-        }
-    })
-    socket.on("connect",()=>{
-        console.log("Connected to server")
-    })
-    socket.on("disconnect",()=>{
-        console.log("Disconnected from server")
-    })
+import { io, Socket } from "socket.io-client";
+import { WS_URL } from "./config";
+
+let socket: Socket | undefined;
+
+function connectSocket(token: string) {
+  socket = io(WS_URL, {
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    autoConnect: true,
+    withCredentials: true,
+    auth: { token },
+  });
 }
 
-export const initSocket=(token: string):Socket=>{
-    if(!socket){
-        connectSocket(token)
-    }
-    return socket
+export function initSocket(token: string): Socket {
+  if (!token) {
+    throw new Error("No auth token for websocket");
+  }
+  if (!socket) {
+    connectSocket(token);
+  }
+  if (!socket) {
+    throw new Error("Failed to open websocket");
+  }
+  return socket;
+}
+
+export function getSocket(): Socket | undefined {
+  return socket;
+}
+
+export function disconnectSocket() {
+  socket?.disconnect();
+  socket = undefined;
 }
