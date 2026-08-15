@@ -23,9 +23,12 @@ import {
   nearestBindable,
   recomputeConnectors,
 } from "./geometry";
-import { api } from "../../lib/api";
+import { api, toastHttpError } from "../../lib/api";
 import type { Shape, ShapeType, Tool } from "./types";
 import toast from "react-hot-toast";
+import { AgentDock } from "./AgentDock";
+import { hydrateIcons } from "./hydrateIcons";
+import { fitShapesInView } from "./fitView";
 
 const generateId = () => Date.now().toString() + Math.random().toString(36).slice(2, 9);
 
@@ -71,6 +74,14 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const libraryOpenRef = useRef(false);
   libraryOpenRef.current = libraryOpen;
+  const [agentOpen, setAgentOpen] = useState(false);
+  const [agentBusy, setAgentBusy] = useState(false);
+  const [agentStatus, setAgentStatus] = useState("");
+  const [canUndoAi, setCanUndoAi] = useState(false);
+  const agentOpenRef = useRef(false);
+  agentOpenRef.current = agentOpen;
+  const agentBusyRef = useRef(false);
+  const aiUndoRef = useRef<Shape[] | null>(null);
   const stampN = useRef(0);
   const [panMode, setPanMode] = useState(false);
   const [scale, setScale] = useState(1);
@@ -87,6 +98,10 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
   toolRef.current = tool;
   const panRef = useRef(panMode);
   panRef.current = panMode;
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+  const stagePosRef = useRef(stagePos);
+  stagePosRef.current = stagePos;
   const selectedRef = useRef(selectedIds);
   selectedRef.current = selectedIds;
   const shiftRef = useRef(false);
@@ -126,6 +141,84 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       });
     },
     [schedulePersist]
+  );
+
+  const undoAi = useCallback(() => {
+    const prev = aiUndoRef.current;
+    if (!prev) return;
+    aiUndoRef.current = null;
+    setCanUndoAi(false);
+    updateShapes(() => prev);
+  }, [updateShapes]);
+
+  const runAgent = useCallback(
+    async (prompt: string) => {
+      if (agentBusyRef.current) return;
+      agentBusyRef.current = true;
+      setAgentBusy(true);
+      setAgentStatus("Reading board…");
+      const snapshot = shapesRef.current;
+      try {
+        const stage = stageRef.current;
+        let imageBase64: string | undefined;
+        if (snapshot.length && stage?.toDataURL) {
+          try {
+            const url = stage.toDataURL({
+              mimeType: "image/jpeg",
+              quality: 0.55,
+              pixelRatio: 1,
+            }) as string;
+            imageBase64 = url.replace(/^data:image\/jpeg;base64,/, "");
+          } catch {
+            imageBase64 = undefined;
+          }
+        }
+        const payloadShapes = snapshot.map(({ iconSvg: _svg, ...shape }) => shape);
+        setAgentStatus("Planning layers…");
+        const { data } = await api.post<{
+          intent: "mutate" | "compose";
+          shapes: Shape[];
+          newIds?: string[];
+        }>(`/api/room/agent/${roomId}`, {
+          prompt,
+          selectionIds: selectedRef.current,
+          shapes: payloadShapes,
+          imageBase64,
+          viewport: {
+            width: stage?.width?.() ?? 0,
+            height: stage?.height?.() ?? 0,
+            scale: scaleRef.current,
+            stageX: stagePosRef.current.x,
+            stageY: stagePosRef.current.y,
+          },
+        });
+        setAgentStatus("Laying out…");
+        const next = normalizeShapes(await hydrateIcons(data.shapes || []));
+        aiUndoRef.current = snapshot;
+        setCanUndoAi(true);
+        updateShapes(() => next);
+        if (data.intent === "compose" && stage) {
+          const ids = new Set(data.newIds || []);
+          const focus = ids.size ? next.filter((shape) => ids.has(shape.id)) : next;
+          const view = fitShapesInView(focus, {
+            width: stage.width(),
+            height: stage.height(),
+          });
+          if (view) {
+            setScale(view.scale);
+            setStagePos(view.stagePos);
+          }
+        }
+        setAgentOpen(false);
+      } catch (error) {
+        toastHttpError(error, "The agent stalled.");
+      } finally {
+        agentBusyRef.current = false;
+        setAgentBusy(false);
+        setAgentStatus("");
+      }
+    },
+    [roomId, updateShapes]
   );
 
   const startEditing = useCallback((shape: Shape) => {
@@ -268,10 +361,24 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Shift") shiftRef.current = true;
       const typing = isTyping(event.target) || Boolean(editingId);
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setLibraryOpen(false);
+        setAgentOpen(true);
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z" && !typing) {
+        if (aiUndoRef.current) {
+          event.preventDefault();
+          undoAi();
+        }
+        return;
+      }
       if (typing) return;
       if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault();
-        setLibraryOpen(true);
+        setLibraryOpen(false);
+        setAgentOpen(true);
         return;
       }
       if (event.code === "Space") {
@@ -302,6 +409,10 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
         return;
       }
       if (event.key === "Escape") {
+        if (agentOpenRef.current) {
+          setAgentOpen(false);
+          return;
+        }
         if (libraryOpenRef.current) {
           setLibraryOpen(false);
           return;
@@ -325,7 +436,7 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [editingId, startEditing, updateShapes]);
+  }, [editingId, startEditing, updateShapes, undoAi]);
 
   const getPointerPosition = () =>
     stageRef.current?.getRelativePointerPosition() ?? stageRef.current?.getPointerPosition();
@@ -713,13 +824,28 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
           <IconPicker onPick={placeIcon} onClose={() => setLibraryOpen(false)} />
         </div>
       ) : null}
+      <div className="pointer-events-none absolute inset-x-0 bottom-20 z-20 flex justify-center md:bottom-4">
+        <AgentDock
+          open={agentOpen}
+          busy={agentBusy}
+          status={agentStatus}
+          canUndo={canUndoAi}
+          onOpen={() => {
+            setLibraryOpen(false);
+            setAgentOpen(true);
+          }}
+          onClose={() => setAgentOpen(false)}
+          onSubmit={(prompt) => void runAgent(prompt)}
+          onUndo={undoAi}
+        />
+      </div>
       {shapes.length === 0 && !currentShape && !libraryOpen ? (
         <div className="pointer-events-none absolute inset-0 z-[5] flex flex-col items-center justify-center px-6 text-center">
           <p className="font-display text-2xl italic text-ink-soft/80 md:text-3xl">
-            Draw a box, or press / for icons.
+            Draw a box, or press ⌘K for the agent.
           </p>
           <p className="mt-2 hidden text-xs uppercase tracking-[0.16em] text-ink-soft/70 md:block">
-            Stamp AWS, databases, users — then connect them with arrows
+            Ask for an architecture — or stamp icons and connect them
           </p>
         </div>
       ) : null}

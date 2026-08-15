@@ -1,5 +1,6 @@
 import  express from "express"
 import { Createroom, GetRoom, DeleteRoom, UpdateRoom, JoinRoom, SaveCanvas, GetCanvas, GetAllRooms, GetMyRooms,GetRoomDetails } from "../Controller/RoomControllers.js"
+import { RunAgent } from "../Controller/AgentController.js"
 import middleware from "../middleware/middleware.js"
 import type { Request, Response, NextFunction } from "express";
 const router = express.Router()
@@ -20,5 +21,6 @@ router.get("/:id/details",asyncHandler(middleware),asyncHandler(GetRoomDetails))
 router.post('/join/:id', asyncHandler(middleware), asyncHandler(JoinRoom));
 router.get('/canvas/:id', asyncHandler(middleware), asyncHandler(GetCanvas));
 router.post('/save/:id', asyncHandler(middleware), asyncHandler(SaveCanvas));
+router.post('/agent/:id', asyncHandler(middleware), asyncHandler(RunAgent));
 
 export default router
