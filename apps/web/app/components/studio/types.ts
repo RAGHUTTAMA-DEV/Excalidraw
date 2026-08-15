@@ -8,7 +8,7 @@ export type Tool =
   | "text"
   | "pen";
 
-export type ShapeType = Exclude<Tool, "select">;
+export type ShapeType = Exclude<Tool, "select"> | "icon";
 
 export type Shape = {
   id: string;
@@ -27,6 +27,8 @@ export type Shape = {
   seed: number;
   startBinding?: string | null;
   endBinding?: string | null;
+  iconId?: string;
+  iconSvg?: string;
 };
 
 export type RoomMember = {

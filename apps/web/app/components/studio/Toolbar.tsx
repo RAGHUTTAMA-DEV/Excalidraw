@@ -8,6 +8,7 @@ import {
   CircleIcon,
   ClearIcon,
   DiamondIcon,
+  LibraryIcon,
   LineIcon,
   PenIcon,
   RectIcon,
@@ -33,10 +34,21 @@ type ToolbarProps = {
   onDelete: () => void;
   onClear: () => void;
   canDelete: boolean;
+  libraryOpen?: boolean;
+  onLibrary: () => void;
   className?: string;
 };
 
-export function Toolbar({ tool, onTool, onDelete, onClear, canDelete, className }: ToolbarProps) {
+export function Toolbar({
+  tool,
+  onTool,
+  onDelete,
+  onClear,
+  canDelete,
+  libraryOpen,
+  onLibrary,
+  className,
+}: ToolbarProps) {
   return (
     <div
       className={cn(
@@ -60,6 +72,17 @@ export function Toolbar({ tool, onTool, onDelete, onClear, canDelete, className 
           {item.icon}
         </button>
       ))}
+      <button
+        type="button"
+        title="Icon library"
+        onClick={onLibrary}
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+          libraryOpen ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper-deep hover:text-ink"
+        )}
+      >
+        <LibraryIcon />
+      </button>
       <span className="mx-1 h-6 w-px bg-line" />
       <button
         type="button"

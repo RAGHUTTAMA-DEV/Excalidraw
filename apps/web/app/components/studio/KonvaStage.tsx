@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Rect, Circle, Line, Text, Transformer, Arrow, Group } from "react-konva";
+import { Stage, Layer, Rect, Circle, Line, Text, Transformer, Arrow, Group, Image as KonvaImage } from "react-konva";
 import type { Shape, Tool } from "./types";
 import { aabb, connectorPoints, isPath, rectRadius } from "./geometry";
 
@@ -79,6 +79,21 @@ type KonvaStageProps = {
   onCommitText: () => void;
   onCancelText: () => void;
 };
+
+function KonvaIcon({ svg, x, y, width, height }: { svg: string; x: number; y: number; width: number; height: number }) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (!svg) return;
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new window.Image();
+    img.onload = () => setImage(img);
+    img.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [svg]);
+  if (!image) return null;
+  return <KonvaImage image={image} x={x} y={y} width={width} height={height} listening={false} />;
+}
 
 function hitFill(fill: string) {
   return !fill || fill === "transparent" ? "rgba(255,255,255,0.001)" : fill;
@@ -259,6 +274,41 @@ export function KonvaStage({
             )}
           </Group>
         );
+      case "icon": {
+        const iconSize = Math.min(w * 0.58, Math.max(28, h - 40));
+        const iconX = (w - iconSize) / 2;
+        return (
+          <Group key={shape.id} {...commonGroup}>
+            <Rect
+              width={w}
+              height={h}
+              cornerRadius={14}
+              fill={hitFill(shape.fill === "transparent" ? "#f4efe4" : shape.fill)}
+              stroke={shape.stroke}
+              strokeWidth={shape.strokeWidth}
+              perfectDrawEnabled={false}
+            />
+            {shape.iconSvg ? (
+              <KonvaIcon svg={shape.iconSvg} x={iconX} y={12} width={iconSize} height={iconSize} />
+            ) : null}
+            {editingId === shape.id ? null : (
+              <Text
+                y={iconSize + 16}
+                width={w}
+                height={Math.max(20, h - iconSize - 20)}
+                text={shape.text || ""}
+                fontSize={shape.fontSize || 14}
+                fontFamily={LABEL_FONT}
+                fill={shape.stroke}
+                align="center"
+                wrap="word"
+                ellipsis
+                listening={false}
+              />
+            )}
+          </Group>
+        );
+      }
       case "line":
       case "arrow": {
         const pts = connectorPoints(shape);

@@ -3,7 +3,7 @@ import type { Shape } from "./types";
 export type Point = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };
 
-export const BINDABLE = new Set(["rectangle", "circle", "diamond", "text"]);
+export const BINDABLE = new Set(["rectangle", "circle", "diamond", "text", "icon"]);
 export const PATH_TYPES = new Set(["arrow", "line", "pen"]);
 
 export function isBindable(shape: Shape) {
@@ -269,6 +269,8 @@ export function normalizeShape(raw: Partial<Shape> & { id: string; type: Shape["
     seed: raw.seed ?? 1,
     startBinding: raw.startBinding ?? null,
     endBinding: raw.endBinding ?? null,
+    iconId: raw.iconId,
+    iconSvg: raw.iconSvg,
   };
 
   if ((shape.type === "arrow" || shape.type === "line") && (!shape.points || shape.points.length < 4)) {

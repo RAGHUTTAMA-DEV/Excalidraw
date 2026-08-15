@@ -5,6 +5,8 @@ import type { Socket } from "socket.io-client";
 import { Toolbar } from "./Toolbar";
 import { PropertiesPopover } from "./PropertiesPopover";
 import { KonvaStage } from "./KonvaStage";
+import { IconPicker } from "./IconPicker";
+import { fetchIconSvg, type CatalogIcon } from "./iconCatalog";
 import { normalizeShapes } from "./normalizeShapes";
 import {
   aabb,
@@ -23,6 +25,7 @@ import {
 } from "./geometry";
 import { api } from "../../lib/api";
 import type { Shape, ShapeType, Tool } from "./types";
+import toast from "react-hot-toast";
 
 const generateId = () => Date.now().toString() + Math.random().toString(36).slice(2, 9);
 
@@ -65,6 +68,10 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
   const [fillColor, setFillColor] = useState("transparent");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [showInk, setShowInk] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const libraryOpenRef = useRef(false);
+  libraryOpenRef.current = libraryOpen;
+  const stampN = useRef(0);
   const [panMode, setPanMode] = useState(false);
   const [scale, setScale] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -136,6 +143,45 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       color: shape.stroke,
     });
   }, []);
+
+  const placeIcon = useCallback(
+    async (icon: CatalogIcon) => {
+      try {
+        const svg = await fetchIconSvg(icon.id, strokeColor);
+        const stage = stageRef.current;
+        if (!stage) return;
+        const n = stampN.current++;
+        const viewScale = scale;
+        const cx = (stage.width() / 2 - stagePos.x) / viewScale;
+        const cy = (stage.height() / 2 - stagePos.y) / viewScale;
+        const next: Shape = {
+          id: generateId(),
+          type: "icon",
+          x: cx - 48 + (n % 8) * 18,
+          y: cy - 56 + (n % 8) * 18,
+          width: 96,
+          height: 112,
+          text: icon.label,
+          fontSize: 14,
+          fill: "transparent",
+          stroke: strokeColor,
+          strokeWidth: 1.5,
+          roughness: 1,
+          seed: Math.floor(Math.random() * 1000),
+          startBinding: null,
+          endBinding: null,
+          iconId: icon.id,
+          iconSvg: svg,
+        };
+        updateShapes((prev) => [...prev, next]);
+        setSelectedIds([next.id]);
+        setTool("select");
+      } catch {
+        toast.error("Could not load that icon.");
+      }
+    },
+    [scale, stagePos.x, stagePos.y, strokeColor, updateShapes]
+  );
 
   const pushDraft = (next: Shape | null) => {
     draftRef.current = next;
@@ -223,6 +269,11 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       if (event.key === "Shift") shiftRef.current = true;
       const typing = isTyping(event.target) || Boolean(editingId);
       if (typing) return;
+      if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        setLibraryOpen(true);
+        return;
+      }
       if (event.code === "Space") {
         event.preventDefault();
         setPanMode(true);
@@ -251,6 +302,10 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
         return;
       }
       if (event.key === "Escape") {
+        if (libraryOpenRef.current) {
+          setLibraryOpen(false);
+          return;
+        }
         setTool("select");
         setSelectedIds([]);
         pushDraft(null);
@@ -486,7 +541,16 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
     if (patch.strokeWidth) setStrokeWidth(patch.strokeWidth);
     const ids = new Set(selectedRef.current);
     if (!ids.size) return;
-    updateShapes((prev) => prev.map((shape) => (ids.has(shape.id) ? { ...shape, ...patch } : shape)));
+    updateShapes((prev) =>
+      prev.map((shape) => {
+        if (!ids.has(shape.id)) return shape;
+        const next = { ...shape, ...patch };
+        if (patch.stroke && shape.type === "icon" && shape.iconSvg && shape.stroke) {
+          next.iconSvg = shape.iconSvg.split(shape.stroke).join(patch.stroke);
+        }
+        return next;
+      })
+    );
   };
 
   const selected = shapes.find((shape) => shape.id === selectedIds[0]);
@@ -494,8 +558,13 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
   const toolbar = (
     <Toolbar
       tool={tool}
-      onTool={setTool}
+      onTool={(next) => {
+        setLibraryOpen(false);
+        setTool(next);
+      }}
       canDelete={selectedIds.length > 0}
+      libraryOpen={libraryOpen}
+      onLibrary={() => setLibraryOpen((open) => !open)}
       onDelete={() => {
         const ids = new Set(selectedRef.current);
         if (!ids.size) return;
@@ -639,13 +708,18 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center pb-[env(safe-area-inset-bottom)] md:hidden">
         {toolbar}
       </div>
-      {shapes.length === 0 && !currentShape ? (
+      {libraryOpen ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-16 z-20 flex justify-center md:bottom-auto md:top-16">
+          <IconPicker onPick={placeIcon} onClose={() => setLibraryOpen(false)} />
+        </div>
+      ) : null}
+      {shapes.length === 0 && !currentShape && !libraryOpen ? (
         <div className="pointer-events-none absolute inset-0 z-[5] flex flex-col items-center justify-center px-6 text-center">
           <p className="font-display text-2xl italic text-ink-soft/80 md:text-3xl">
-            Draw a box, then write in it.
+            Draw a box, or press / for icons.
           </p>
           <p className="mt-2 hidden text-xs uppercase tracking-[0.16em] text-ink-soft/70 md:block">
-            Double-click a box to label it · drag an arrow between boxes
+            Stamp AWS, databases, users — then connect them with arrows
           </p>
         </div>
       ) : null}

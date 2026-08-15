@@ -83,6 +83,17 @@ export function PenIcon() {
   );
 }
 
+export function LibraryIcon() {
+  return (
+    <Icon>
+      <rect x="4" y="4" width="7" height="7" rx="1.6" />
+      <rect x="13" y="4" width="7" height="7" rx="1.6" />
+      <rect x="4" y="13" width="7" height="7" rx="1.6" />
+      <rect x="13" y="13" width="7" height="7" rx="1.6" />
+    </Icon>
+  );
+}
+
 export function TrashIcon() {
   return (
     <Icon>
