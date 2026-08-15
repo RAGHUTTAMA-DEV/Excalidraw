@@ -16,8 +16,14 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Trace Studio",
+  title: {
+    default: "Trace Studio",
+    template: "%s · Trace Studio",
+  },
   description: "A shared drafting table for diagrams and sketches.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

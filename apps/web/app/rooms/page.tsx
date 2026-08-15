@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import AuthStore from "../Zustand/AuthStore";
 import { useRooms } from "../hooks/useRooms";
-import { api, apiErrorMessage } from "../lib/api";
+import { api, apiErrorMessage, toastHttpError } from "../lib/api";
 import { paths } from "../lib/paths";
 import { AppHeader } from "../components/AppHeader";
 import { Button } from "../components/ui/Button";
@@ -31,7 +31,7 @@ export default function RoomsPage() {
       const response = await api.get<{ rooms: Room[] }>(`/api/room/my-rooms/${user.id}`);
       setMyRooms(response.data.rooms ?? []);
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Could not load your boards"));
+      toastHttpError(err, "Could not load your boards");
     } finally {
       setMyLoading(false);
     }
@@ -45,6 +45,10 @@ export default function RoomsPage() {
     void fetchRooms();
     void getMyRooms();
   }, [token, router, fetchRooms]);
+
+  useEffect(() => {
+    if (isError && errorMessage) toast.error(errorMessage);
+  }, [isError, errorMessage]);
 
   const mineIds = useMemo(() => new Set(myRooms.map((room) => room.id)), [myRooms]);
   const discover = rooms.filter((room) => !mineIds.has(room.id));
@@ -65,7 +69,7 @@ export default function RoomsPage() {
         openRoom(roomId);
         return;
       }
-      toast.error(message);
+      toastHttpError(err, "Failed to join room");
     } finally {
       setBusyId(null);
     }
@@ -96,18 +100,18 @@ export default function RoomsPage() {
     <div className="relative flex min-h-dvh flex-col">
       <div className="paper-grain pointer-events-none absolute inset-0 opacity-40" />
       <AppHeader />
-      <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-6 py-10">
+      <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-4 py-6 sm:gap-12 sm:px-6 sm:py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.26em] text-copper">Studio floor</p>
-            <h1 className="mt-2 font-display text-5xl italic leading-none">
+            <h1 className="mt-2 font-display text-4xl italic leading-none sm:text-5xl">
               Evening, {firstName}.
             </h1>
             <p className="mt-3 max-w-lg text-sm leading-relaxed text-ink-soft">
               Your sheets on the left of the day. Strangers’ tables below, if you want a seat.
             </p>
           </div>
-          <Button className="px-5 py-3" onClick={() => setCreateOpen(true)}>
+          <Button className="w-full px-5 py-3 sm:w-auto" onClick={() => setCreateOpen(true)}>
             New board
           </Button>
         </div>
@@ -159,7 +163,10 @@ export default function RoomsPage() {
               <RoomCardSkeleton />
             </div>
           ) : isError ? (
-            <p className="text-danger">{errorMessage}</p>
+            <EmptyState
+              title="Could not fetch tables"
+              description={errorMessage}
+            />
           ) : discover.length === 0 ? (
             <EmptyState
               title="No other tables"

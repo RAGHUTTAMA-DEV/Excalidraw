@@ -9,6 +9,10 @@ type KonvaStageProps = {
   currentShape: Shape | null;
   tool: Tool;
   selectedId: string | null;
+  panMode: boolean;
+  scale: number;
+  stagePos: { x: number; y: number };
+  onViewChange: (next: { scale: number; stagePos: { x: number; y: number } }) => void;
   onMouseDown: (event: any) => void;
   onMouseMove: (event: any) => void;
   onMouseUp: () => void;
@@ -30,6 +34,10 @@ export function KonvaStage({
   currentShape,
   tool,
   selectedId,
+  panMode,
+  scale,
+  stagePos,
+  onViewChange,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -47,6 +55,8 @@ export function KonvaStage({
 }: KonvaStageProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const panning = useRef(false);
+  const lastPointer = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -227,16 +237,70 @@ export function KonvaStage({
   };
 
   return (
-    <div ref={wrapRef} className="desk-grid relative h-full w-full overflow-hidden bg-paper">
+    <div
+      ref={wrapRef}
+      className="desk-grid relative h-full w-full overflow-hidden bg-paper"
+      style={{ cursor: panMode || panning.current ? "grab" : tool === "select" ? "default" : "crosshair" }}
+    >
       {size.width > 0 ? (
         <Stage
           ref={stageRef}
           width={size.width}
           height={size.height}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
+          scaleX={scale}
+          scaleY={scale}
+          x={stagePos.x}
+          y={stagePos.y}
+          onWheel={(event) => {
+            event.evt.preventDefault();
+            const stage = stageRef.current;
+            if (!stage) return;
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return;
+            const oldScale = scale;
+            const nextScale = event.evt.deltaY > 0 ? oldScale / 1.06 : oldScale * 1.06;
+            const clamped = Math.min(3, Math.max(0.25, nextScale));
+            const mousePointTo = {
+              x: (pointer.x - stagePos.x) / oldScale,
+              y: (pointer.y - stagePos.y) / oldScale,
+            };
+            onViewChange({
+              scale: clamped,
+              stagePos: {
+                x: pointer.x - mousePointTo.x * clamped,
+                y: pointer.y - mousePointTo.y * clamped,
+              },
+            });
+          }}
+          onMouseDown={(event) => {
+            if (panMode || event.evt.button === 1) {
+              panning.current = true;
+              lastPointer.current = { x: event.evt.clientX, y: event.evt.clientY };
+              return;
+            }
+            onMouseDown(event);
+          }}
+          onMouseMove={(event) => {
+            if (panning.current) {
+              const dx = event.evt.clientX - lastPointer.current.x;
+              const dy = event.evt.clientY - lastPointer.current.y;
+              lastPointer.current = { x: event.evt.clientX, y: event.evt.clientY };
+              onViewChange({
+                scale,
+                stagePos: { x: stagePos.x + dx, y: stagePos.y + dy },
+              });
+              return;
+            }
+            onMouseMove(event);
+          }}
+          onMouseUp={() => {
+            panning.current = false;
+            onMouseUp();
+          }}
+          onMouseLeave={() => {
+            panning.current = false;
+            onMouseUp();
+          }}
         >
           <Layer>
             {shapes.map(renderShape)}
@@ -260,11 +324,11 @@ export function KonvaStage({
         <input
           className="absolute z-10 rounded border border-copper bg-paper px-1 font-display text-ink outline-none"
           style={{
-            left: inputPosition.x,
-            top: inputPosition.y,
-            width: inputPosition.width,
-            height: inputPosition.height,
-            fontSize: 16,
+            left: inputPosition.x * scale + stagePos.x,
+            top: inputPosition.y * scale + stagePos.y,
+            width: inputPosition.width * scale,
+            height: inputPosition.height * scale,
+            fontSize: 16 * scale,
           }}
           value={editingValue}
           onChange={(e) => onEditingValue(e.target.value)}

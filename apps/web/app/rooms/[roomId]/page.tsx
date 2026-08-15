@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import dynamic from "next/dynamic";
 import AuthStore from "../../Zustand/AuthStore";
-import { api } from "../../lib/api";
+import { api, toastHttpError } from "../../lib/api";
 import { WS_URL } from "../../lib/config";
 import { StudioChrome } from "../../components/StudioChrome";
 import { MembersMenu } from "../../components/studio/MembersMenu";
@@ -64,17 +64,13 @@ export default function RoomCanvasPage() {
       setMembers(response.data.members ?? []);
       setRoomDetails(response.data.room);
     } catch (err) {
-      console.error("Error fetching room details:", err);
+      toastHttpError(err, "Could not open this board");
     }
   }
 
   const sendMessage = () => {
     if (!draft.trim()) return;
     socket?.emit("message", Number(roomId), draft);
-    setMessages((prev) => [
-      ...prev,
-      { content: draft, createdAt: new Date().toISOString() },
-    ]);
     setDraft("");
   };
 
@@ -99,7 +95,7 @@ export default function RoomCanvasPage() {
         </Button>
       }
     >
-      <Whiteboard />
+      <Whiteboard roomId={Number(roomId)} socket={socket} />
       <ChatDrawer
         open={chatOpen}
         onClose={() => setChatOpen(false)}

@@ -33,11 +33,17 @@ type ToolbarProps = {
   onDelete: () => void;
   onClear: () => void;
   canDelete: boolean;
+  className?: string;
 };
 
-export function Toolbar({ tool, onTool, onDelete, onClear, canDelete }: ToolbarProps) {
+export function Toolbar({ tool, onTool, onDelete, onClear, canDelete, className }: ToolbarProps) {
   return (
-    <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-line bg-paper/95 px-2 py-1.5 shadow-[0_10px_30px_-16px_rgba(28,25,23,0.55)] backdrop-blur">
+    <div
+      className={cn(
+        "pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-full border border-line bg-paper/95 px-2 py-1.5 shadow-[0_10px_30px_-16px_rgba(28,25,23,0.55)] backdrop-blur",
+        className
+      )}
+    >
       {tools.map((item) => (
         <button
           key={item.id}

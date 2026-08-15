@@ -163,15 +163,15 @@ Split `Whiteboard.tsx` into `StudioLayout`, `Toolbar`, `PropertiesPopover`, `Kon
 
 ## Phase 5 — Canvas behavior
 
-Do this **after** the layout split.
+Status: **done**
 
-1. **Stage sizing** — observe parent; update on resize.
-2. **Arrow tool** — implement or remove from the toolbar.
-3. **Keyboard** — `V` select, `R` rect, `O` ellipse, `L` line, `P` pen, `T` text, `Delete`, `Esc`.
-4. **Pan/zoom** — wheel zoom, space+drag pan.
-5. **Realtime** — emit `shape:add` / `shape:update` / `shape:delete`; apply remote events. Do not append a raw string as a chat message object.
-6. **Persistence** — load `room.canvasState` on join; debounce save.
-7. **SSR** — only the Konva stage is `dynamic(..., { ssr: false })`.
+1. Stage sizing via `ResizeObserver`
+2. Arrow tool draws a real arrow
+3. Keyboard: `V` select, `R` rect, `O` ellipse, `D` diamond, `A` arrow, `L` line, `P` pen, `T` text, `Delete`, `Esc`; hold Space to pan
+4. Wheel zoom
+5. Live `drawing:update` / `drawing:clear` plus HTTP `POST /api/room/save/:id`
+6. Load `canvasState` on join (`GET /api/room/canvas/:id` and `room:data`)
+7. Konva stage still `dynamic(..., { ssr: false })`
 
 **Done when:** two browsers in the same room see the same strokes and a reload restores the board.
 
@@ -179,11 +179,13 @@ Do this **after** the layout split.
 
 ## Phase 6 — Polish
 
+Status: **done**
+
 - Empty canvas hint that disappears after first shape
-- Toast errors for join-full / unauthorized
-- Loading skeletons on rooms
-- Favicon + metadata (replace “Create Next App”)
-- Mobile: rooms hub works; canvas gets a bottom tool dock
+- Toast errors for join-full / unauthorized / expired session
+- Loading skeletons on rooms (and empty/error states)
+- Favicon + Trace Studio metadata
+- Mobile: tighter hub layout; canvas tool dock along the bottom
 
 ---
 
