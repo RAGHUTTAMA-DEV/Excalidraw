@@ -6,7 +6,16 @@
       "dependsOn": ["^build", "db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["DATABASE_URL", "NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_WS_URL", "HTTP_SERVER_URL"]
+      "env": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_WS_URL",
+        "HTTP_SERVER_URL",
+        "JWT_SECRET",
+        "GEMINI_API_KEY",
+        "GEMINI_MODEL",
+        "ENABLE_EXPERIMENTAL_COREPACK"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
