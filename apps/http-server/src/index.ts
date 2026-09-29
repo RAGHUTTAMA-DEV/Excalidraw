@@ -20,7 +20,9 @@ app.use(express.json({ limit: "2mb" }))
 app.use('/api/auth',authroutes)
 app.use('/api/room',roomroutes)
 
-const port = process.env.PORT 
+const port = process.env.PORT || 3001;
 app.listen(port, () => {
-  console.log('Server is running on port'+port)
-})
+  console.log('Server is running on port ' + port);
+});
+
+export default app;

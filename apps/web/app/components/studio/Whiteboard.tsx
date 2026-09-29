@@ -545,7 +545,7 @@ export default function Whiteboard({ roomId, socket }: WhiteboardProps) {
       const pts = current.points || [];
       const lastX = pts[pts.length - 2];
       const lastY = pts[pts.length - 1];
-      if (lastX != null && Math.hypot(pos.x - lastX, pos.y - lastY) < 1.6) return;
+      if (lastX != null && lastY != null && Math.hypot(pos.x - lastX, pos.y - lastY) < 1.6) return;
       pushDraft({ ...current, points: [...pts, pos.x, pos.y] });
       return;
     }

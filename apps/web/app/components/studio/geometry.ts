@@ -44,10 +44,14 @@ export function aabb(shape: Shape): Box {
     let maxX = -Infinity;
     let maxY = -Infinity;
     for (let i = 0; i < pts.length; i += 2) {
-      minX = Math.min(minX, pts[i]);
-      minY = Math.min(minY, pts[i + 1]);
-      maxX = Math.max(maxX, pts[i]);
-      maxY = Math.max(maxY, pts[i + 1]);
+      const px = pts[i];
+      const py = pts[i + 1];
+      if (px !== undefined && py !== undefined) {
+        minX = Math.min(minX, px);
+        minY = Math.min(minY, py);
+        maxX = Math.max(maxX, px);
+        maxY = Math.max(maxY, py);
+      }
     }
     return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
   }
@@ -65,7 +69,8 @@ export function centerOf(box: Box): Point {
 
 export function connectorPoints(shape: Shape): [number, number, number, number] {
   if (shape.points && shape.points.length >= 4) {
-    return [shape.points[0], shape.points[1], shape.points[2], shape.points[3]];
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = shape.points;
+    return [x1, y1, x2, y2];
   }
   return [shape.x, shape.y, shape.x + (shape.width || 0), shape.y + (shape.height || 0)];
 }
@@ -98,13 +103,23 @@ function distToSegment(p: Point, a: Point, b: Point) {
 
 export function distToPolyline(p: Point, points: number[]) {
   if (points.length < 2) return Infinity;
-  if (points.length < 4) return dist(p, { x: points[0], y: points[1] });
+  const p0 = points[0];
+  const p1 = points[1];
+  if (points.length < 4) {
+    if (p0 !== undefined && p1 !== undefined) {
+      return dist(p, { x: p0, y: p1 });
+    }
+    return Infinity;
+  }
   let best = Infinity;
   for (let i = 0; i < points.length - 2; i += 2) {
-    best = Math.min(
-      best,
-      distToSegment(p, { x: points[i], y: points[i + 1] }, { x: points[i + 2], y: points[i + 3] })
-    );
+    const ax = points[i];
+    const ay = points[i + 1];
+    const bx = points[i + 2];
+    const by = points[i + 3];
+    if (ax !== undefined && ay !== undefined && bx !== undefined && by !== undefined) {
+      best = Math.min(best, distToSegment(p, { x: ax, y: ay }, { x: bx, y: by }));
+    }
   }
   return best;
 }
@@ -112,6 +127,7 @@ export function distToPolyline(p: Point, points: number[]) {
 export function hitShapeAt(shapes: Shape[], point: Point, threshold = 20): Shape | null {
   for (let i = shapes.length - 1; i >= 0; i--) {
     const shape = shapes[i];
+    if (!shape) continue;
     if (shape.type === "pen") {
       if (distToPolyline(point, shape.points || []) <= Math.max(threshold, (shape.strokeWidth || 2) + 12)) {
         return shape;
