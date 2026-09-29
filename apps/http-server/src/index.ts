@@ -27,4 +27,6 @@ if (!process.env.VERCEL) {
   });
 }
 
+// Support both CommonJS require() (for Vercel Function runtime) and ESM
+module.exports = app;
 export default app;
