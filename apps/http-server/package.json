@@ -2,11 +2,11 @@
   "name": "http-server",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc -b",
-    "start": "tsc -b && node dist/index.js",
-    "dev": "tsc -b && node dist/index.js"
+    "build": "node build.js",
+    "start": "node index.js",
+    "dev": "node build.js && node index.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +20,9 @@
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   },
   "compilerOptions": {
     "baseUrl": ".",
