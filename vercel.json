@@ -4,6 +4,7 @@
     "http-server": {
       "root": "apps/http-server",
       "framework": "express",
+      "entrypoint": "dist/index.js",
       "installCommand": "cd ../.. && pnpm install",
       "buildCommand": "cd ../.. && pnpm turbo run build --filter=http-server"
     },
