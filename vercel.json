@@ -3,11 +3,15 @@
   "services": {
     "http-server": {
       "root": "apps/http-server",
-      "framework": "express"
+      "framework": "express",
+      "installCommand": "cd ../.. && pnpm install",
+      "buildCommand": "cd ../.. && pnpm --filter @repo/db db:generate && pnpm --filter http-server build"
     },
     "web": {
       "root": "apps/web",
       "framework": "nextjs",
+      "installCommand": "cd ../.. && pnpm install",
+      "buildCommand": "cd ../.. && pnpm --filter @repo/db db:generate && pnpm --filter web build",
       "bindings": [
         {
           "type": "service",
