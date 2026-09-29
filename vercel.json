@@ -5,13 +5,13 @@
       "root": "apps/http-server",
       "framework": "express",
       "installCommand": "cd ../.. && pnpm install",
-      "buildCommand": "cd ../.. && pnpm --filter @repo/db db:generate && pnpm --filter http-server build"
+      "buildCommand": "cd ../.. && pnpm turbo run build --filter=http-server"
     },
     "web": {
       "root": "apps/web",
       "framework": "nextjs",
       "installCommand": "cd ../.. && pnpm install",
-      "buildCommand": "cd ../.. && pnpm --filter @repo/db db:generate && pnpm --filter web build",
+      "buildCommand": "cd ../.. && pnpm turbo run build --filter=web",
       "bindings": [
         {
           "type": "service",

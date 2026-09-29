@@ -106,7 +106,7 @@ export async function JoinRoom(req: AuthenticatedRequest, res: Response){
          res.status(403).json({message:"Room is not active"});
          return;
       }
-      if(room.members.some(member => member.id === userId)){
+      if(room.members.some((member: any) => member.id === userId)){
          res.status(400).json({message:"User already in room"});
          return;
       }
